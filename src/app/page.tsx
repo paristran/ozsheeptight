@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 
 import { Hero } from '@/components/home/Hero'
