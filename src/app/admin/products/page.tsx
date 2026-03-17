@@ -13,7 +13,9 @@ import {
   Package,
   Filter,
   X,
-  Upload
+  Upload,
+  CheckSquare,
+  Square
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Product, Category } from '@/lib/types/database'
@@ -30,6 +32,8 @@ export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -59,6 +63,33 @@ export default function AdminProductsPage() {
     await supabase.from('products').delete().eq('id', id)
     setProducts(products.filter(p => p.id !== id))
     setShowDeleteModal(null)
+    setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next })
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredProducts.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredProducts.map(p => p.id)))
+    }
+  }
+
+  async function deleteSelected() {
+    setBulkDeleting(true)
+    const supabase = createClient()
+    await supabase.from('products').delete().in('id', Array.from(selectedIds))
+    setProducts(products.filter(p => !selectedIds.has(p.id)))
+    setSelectedIds(new Set())
+    setBulkDeleting(false)
   }
 
   const filteredProducts = products.filter(product => {
@@ -126,6 +157,43 @@ export default function AdminProductsPage() {
         </div>
       </Card>
 
+      {/* Bulk Actions Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <Card className="p-4 border-2 border-primary-300 bg-primary-50 flex items-center justify-between">
+              <span className="text-primary-700 font-medium">
+                {selectedIds.size} {selectedIds.size === 1 ? 'product' : 'products'} selected
+              </span>
+              <div className="flex gap-3">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+                  Clear
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={deleteSelected}
+                  disabled={bulkDeleting}
+                >
+                  {bulkDeleting ? (
+                    <>{/* spinner */} Deleting...</>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Selected
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Products Table */}
       <Card className="overflow-hidden border-2 border-light-200">
         {loading ? (
@@ -158,6 +226,14 @@ export default function AdminProductsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-light-200 bg-light-50">
+                  <th className="text-left px-4 py-4 w-12">
+                    <button onClick={toggleSelectAll} className="text-slate-400 hover:text-primary-500 transition-colors">
+                      {selectedIds.size === filteredProducts.length && filteredProducts.length > 0
+                        ? <CheckSquare className="h-5 w-5 text-primary-500" />
+                        : <Square className="h-5 w-5" />
+                      }
+                    </button>
+                  </th>
                   <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Product</th>
                   <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Category</th>
                   <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Price</th>
@@ -177,6 +253,17 @@ export default function AdminProductsPage() {
                       transition={{ delay: index * 0.02 }}
                       className="border-b border-light-200 hover:bg-light-50/50 transition-colors"
                     >
+                      <td className="px-4 py-4">
+                        <button
+                          onClick={() => toggleSelect(product.id)}
+                          className="text-slate-300 hover:text-primary-500 transition-colors"
+                        >
+                          {selectedIds.has(product.id)
+                            ? <CheckSquare className="h-5 w-5 text-primary-500" />
+                            : <Square className="h-5 w-5" />
+                          }
+                        </button>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
                           <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-primary-50 to-purple-50 shrink-0 border-2 border-light-200">
