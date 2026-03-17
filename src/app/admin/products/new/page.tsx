@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -12,7 +12,8 @@ import {
   X,
   Loader2,
   Plus,
-  ImageIcon
+  Trash2,
+  Layers
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Category } from '@/lib/types/database'
@@ -20,6 +21,40 @@ import { slugify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input, Textarea } from '@/components/ui/input'
+
+interface VariantOptionForm {
+  id: string
+  name: string
+  values: string[]
+}
+
+interface VariantForm {
+  id: string
+  title: string
+  price: string
+  compare_at_price: string
+  stock_quantity: string
+  image_url: string
+  sku: string
+  selectedValues: { option: string; value: string }[]
+}
+
+// Generate all combinations of option values
+function generateCombinations(options: VariantOptionForm[]): { option: string; value: string }[][] {
+  if (options.length === 0) return []
+  let result: { option: string; value: string }[][] = [[]]
+  for (const opt of options) {
+    if (opt.values.length === 0) continue
+    const newResult: { option: string; value: string }[][] = []
+    for (const combo of result) {
+      for (const val of opt.values) {
+        newResult.push([...combo, { option: opt.name, value: val }])
+      }
+    }
+    result = newResult
+  }
+  return result
+}
 
 export default function NewProductPage() {
   const router = useRouter()
@@ -41,6 +76,10 @@ export default function NewProductPage() {
     active: true,
   })
   const [galleryImages, setGalleryImages] = useState<string[]>([])
+  const [variantOptions, setVariantOptions] = useState<VariantOptionForm[]>([])
+  const [variantRows, setVariantRows] = useState<VariantForm[]>([])
+  const [showVariations, setShowVariations] = useState(false)
+  const [newValueInput, setNewValueInput] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchCategories()
@@ -95,6 +134,60 @@ export default function NewProductPage() {
     setGalleryImages(prev => prev.filter((_, i) => i !== index))
   }
 
+  // --- Variation handlers ---
+  const addOption = () => {
+    const id = `opt_${Date.now()}`
+    setVariantOptions(prev => [...prev, { id, name: '', values: [] }])
+    setShowVariations(true)
+  }
+
+  const removeOption = (optId: string) => {
+    setVariantOptions(prev => prev.filter(o => o.id !== optId))
+    regenerateVariants()
+  }
+
+  const updateOptionName = (optId: string, name: string) => {
+    setVariantOptions(prev => prev.map(o => o.id === optId ? { ...o, name } : o))
+  }
+
+  const addValue = (optId: string) => {
+    const val = (newValueInput[optId] || '').trim()
+    if (!val) return
+    setVariantOptions(prev => prev.map(o =>
+      o.id === optId ? { ...o, values: [...o.values, val] } : o
+    ))
+    setNewValueInput(prev => ({ ...prev, [optId]: '' }))
+  }
+
+  const removeValue = (optId: string, value: string) => {
+    setVariantOptions(prev => prev.map(o =>
+      o.id === optId ? { ...o, values: o.values.filter(v => v !== value) } : o
+    ))
+  }
+
+  const regenerateVariants = useCallback(() => {
+    const validOptions = variantOptions.filter(o => o.name && o.values.length > 0)
+    const combos = generateCombinations(validOptions)
+    setVariantRows(combos.map((combo, i) => ({
+      id: `var_${Date.now()}_${i}`,
+      title: combo.map(c => c.value).join(' / '),
+      price: formData.price || '0',
+      compare_at_price: '',
+      stock_quantity: '0',
+      image_url: '',
+      sku: '',
+      selectedValues: combo,
+    })))
+  }, [variantOptions, formData.price])
+
+  const updateVariantRow = (varId: string, field: string, value: string) => {
+    setVariantRows(prev => prev.map(v => v.id === varId ? { ...v, [field]: value } : v))
+  }
+
+  const removeVariantRow = (varId: string) => {
+    setVariantRows(prev => prev.filter(v => v.id !== varId))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -113,16 +206,50 @@ export default function NewProductPage() {
       active: formData.active,
     }
 
-    const { error } = await fetch('/api/admin/crud', {
+    const productRes = await fetch('/api/admin/crud', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ table: 'products', action: 'insert', data: productData }),
     }).then(r => r.json())
 
-    if (error) {
-      alert('Error creating product: ' + error)
+    if (productRes.error) {
+      alert('Error creating product: ' + productRes.error)
       setLoading(false)
       return
+    }
+
+    // Save variants if any
+    const validOptions = variantOptions.filter(o => o.name && o.values.length > 0)
+    if (validOptions.length > 0 && variantRows.length > 0) {
+      const supabase = createClient()
+      const { data: product } = await supabase
+        .from('products')
+        .select('id')
+        .eq('title', formData.title)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single() as any
+
+      if (product) {
+        await fetch('/api/admin/variants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: product.id,
+            options: validOptions.map((o, i) => ({ name: o.name, values: o.values, position: i })),
+            variants: variantRows.map((v, i) => ({
+              title: v.title,
+              sku: v.sku || null,
+              price: parseFloat(v.price) || 0,
+              compare_at_price: v.compare_at_price ? parseFloat(v.compare_at_price) : null,
+              image_url: v.image_url || null,
+              stock_quantity: parseInt(v.stock_quantity) || 0,
+              position: i,
+              selectedValues: v.selectedValues,
+            })),
+          }),
+        })
+      }
     }
 
     router.push('/admin/products')
@@ -313,6 +440,92 @@ export default function NewProductPage() {
                   </button>
                 </div>
               </div>
+            </Card>
+
+            {/* Variations */}
+            <Card className="p-6 border-2 border-light-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="text-xl">🎨</span>
+                  Variations
+                </h2>
+                <Button type="button" variant="secondary" size="sm" onClick={addOption}>
+                  <Plus className="mr-1 h-4 w-4" /> Add Option
+                </Button>
+              </div>
+
+              {variantOptions.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-light-200 rounded-2xl">
+                  <Layers className="h-10 w-10 text-slate-300 mx-auto mb-2" />
+                  <p className="text-slate-500 text-sm">No variations yet</p>
+                  <p className="text-slate-400 text-xs mt-1">Add options like Color, Size, etc.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {variantOptions.map((opt, optIdx) => (
+                    <div key={opt.id} className="p-4 rounded-2xl bg-light-50 border border-light-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-sm font-bold text-slate-500">Option {optIdx + 1}</span>
+                        <Input value={opt.name} onChange={e => updateOptionName(opt.id, e.target.value)} placeholder="e.g., Color, Size" className="flex-1 h-9 text-sm" />
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-coral-500" onClick={() => removeOption(opt.id)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {opt.values.map(val => (
+                          <span key={val} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border-2 border-primary-200 text-primary-700 text-sm font-medium">
+                            {val}
+                            <button type="button" onClick={() => removeValue(opt.id, val)} className="text-primary-400 hover:text-coral-500"><X className="h-3 w-3" /></button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input value={newValueInput[opt.id] || ''} onChange={e => setNewValueInput(prev => ({ ...prev, [opt.id]: e.target.value }))} placeholder="Add value (e.g., Red, Small)" className="flex-1 h-9 text-sm" onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addValue(opt.id))} />
+                        <Button type="button" variant="ghost" size="sm" onClick={() => addValue(opt.id)}>Add</Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {variantOptions.some(o => o.values.length > 0) && (
+                    <Button type="button" onClick={regenerateVariants} className="w-full">
+                      🔄 Generate {generateCombinations(variantOptions.filter(o => o.name && o.values.length > 0)).length} Variants
+                    </Button>
+                  )}
+
+                  {variantRows.length > 0 && (
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b-2 border-light-200">
+                            <th className="text-left text-slate-500 py-2 px-2 font-semibold">Variant</th>
+                            <th className="text-left text-slate-500 py-2 px-2 font-semibold">SKU</th>
+                            <th className="text-left text-slate-500 py-2 px-2 font-semibold">Price</th>
+                            <th className="text-left text-slate-500 py-2 px-2 font-semibold">Compare</th>
+                            <th className="text-left text-slate-500 py-2 px-2 font-semibold">Stock</th>
+                            <th className="text-left text-slate-500 py-2 px-2 font-semibold">Image</th>
+                            <th className="w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {variantRows.map(row => (
+                            <tr key={row.id} className="border-b border-light-100">
+                              <td className="py-2 px-2"><span className="font-medium text-slate-700">{row.title}</span></td>
+                              <td className="py-2 px-2"><Input value={row.sku} onChange={e => updateVariantRow(row.id, 'sku', e.target.value)} className="h-8 text-xs w-24" placeholder="SKU" /></td>
+                              <td className="py-2 px-2"><Input value={row.price} onChange={e => updateVariantRow(row.id, 'price', e.target.value)} type="number" step="0.01" className="h-8 text-xs w-20" /></td>
+                              <td className="py-2 px-2"><Input value={row.compare_at_price} onChange={e => updateVariantRow(row.id, 'compare_at_price', e.target.value)} type="number" step="0.01" className="h-8 text-xs w-20" placeholder="0.00" /></td>
+                              <td className="py-2 px-2"><Input value={row.stock_quantity} onChange={e => updateVariantRow(row.id, 'stock_quantity', e.target.value)} type="number" className="h-8 text-xs w-16" /></td>
+                              <td className="py-2 px-2"><Input value={row.image_url} onChange={e => updateVariantRow(row.id, 'image_url', e.target.value)} className="h-8 text-xs w-28" placeholder="URL" /></td>
+                              <td className="py-2 px-2">
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-coral-500" onClick={() => removeVariantRow(row.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </Card>
           </div>
 
