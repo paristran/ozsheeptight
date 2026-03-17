@@ -62,8 +62,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items: items.map(item => ({
             id: item.id,
-            title: item.title,
-            price: item.price,
+            title: item.variant_title ? `${item.title} - ${item.variant_title}` : item.title,
+            price: item.variant_price !== undefined ? item.variant_price : item.price,
             quantity: item.quantity,
           })),
           customer: form,
@@ -255,7 +255,9 @@ export default function CheckoutPage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-slate-800 font-medium text-sm truncate">{item.title}</p>
+                          <p className="text-slate-800 font-medium text-sm truncate">
+                            {item.title}{item.variant_title ? ` — ${item.variant_title}` : ''}
+                          </p>
                           <p className="text-slate-500 text-xs">Qty: {item.quantity}</p>
                         </div>
                         <p className="text-slate-800 font-bold text-sm">{formatPrice(item.price * item.quantity)}</p>
