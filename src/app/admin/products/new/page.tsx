@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { 
   ArrowLeft,
   Save,
-  Image as ImageIcon,
-  Sparkles,
-  DollarSign,
-  Package,
-  Tag
+  Upload,
+  X,
+  Loader2,
+  Plus,
+  ImageIcon
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Category } from '@/lib/types/database'
@@ -22,8 +23,11 @@ import { Input, Textarea } from '@/components/ui/input'
 
 export default function NewProductPage() {
   const router = useRouter()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLInputElement>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -32,11 +36,11 @@ export default function NewProductPage() {
     compare_at_price: '',
     category_id: '',
     image_url: '',
-    images: '',
     stock_quantity: '0',
     featured: false,
     active: true,
   })
+  const [galleryImages, setGalleryImages] = useState<string[]>([])
 
   useEffect(() => {
     fetchCategories()
@@ -57,7 +61,6 @@ export default function NewProductPage() {
       [name]: type === 'checkbox' ? checked : value,
     }))
 
-    // Auto-generate slug from title
     if (name === 'title' && !formData.slug) {
       setFormData(prev => ({
         ...prev,
@@ -66,12 +69,36 @@ export default function NewProductPage() {
     }
   }
 
+  const uploadImages = async (files: FileList, isMain: boolean) => {
+    setUploading(true)
+    const form = new FormData()
+    Array.from(files).forEach(f => form.append('files', f))
+
+    const res = await fetch('/api/upload', { method: 'POST', body: form })
+    const { urls, error } = await res.json()
+
+    if (error) {
+      alert('Upload failed: ' + error)
+      setUploading(false)
+      return
+    }
+
+    if (isMain && urls[0]) {
+      setFormData(prev => ({ ...prev, image_url: urls[0] }))
+    } else {
+      setGalleryImages(prev => [...prev, ...urls])
+    }
+    setUploading(false)
+  }
+
+  const removeGalleryImage = (index: number) => {
+    setGalleryImages(prev => prev.filter((_, i) => i !== index))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const supabase = createClient()
-    
     const productData = {
       title: formData.title,
       slug: formData.slug || slugify(formData.title),
@@ -80,7 +107,7 @@ export default function NewProductPage() {
       compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
       category_id: formData.category_id || null,
       image_url: formData.image_url || null,
-      images: formData.images ? formData.images.split(',').map(s => s.trim()) : null,
+      images: galleryImages.length > 0 ? galleryImages : null,
       stock_quantity: parseInt(formData.stock_quantity) || 0,
       featured: formData.featured,
       active: formData.active,
@@ -93,7 +120,7 @@ export default function NewProductPage() {
     }).then(r => r.json())
 
     if (error) {
-      alert('Error creating product: ' + error.message)
+      alert('Error creating product: ' + error)
       setLoading(false)
       return
     }
@@ -201,25 +228,89 @@ export default function NewProductPage() {
                 <span className="text-xl">🖼️</span>
                 Images
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Main Image Upload */}
                 <div>
-                  <label className="text-slate-600 text-sm font-medium mb-2 block">Main Image URL</label>
-                  <Input
-                    name="image_url"
-                    value={formData.image_url}
-                    onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Main Image *</label>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadImages(e.target.files, true)} />
+                  
+                  {formData.image_url ? (
+                    <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-light-200 group">
+                      <Image src={formData.image_url} alt="Main" fill className="object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
+                          Replace
+                        </Button>
+                        <Button type="button" variant="destructive" size="sm" onClick={() => setFormData(p => ({ ...p, image_url: '' }))}>
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-primary-500 text-white text-xs font-bold">
+                        Main
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      className="w-full h-48 rounded-2xl border-2 border-dashed border-light-300 hover:border-primary-400 hover:bg-primary-50/50 transition-all flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-primary-500"
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      ) : (
+                        <>
+                          <Upload className="h-8 w-8" />
+                          <span className="font-medium">Click to upload main image</span>
+                          <span className="text-xs">JPG, PNG, WebP — max 5MB</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
+
+                {/* Or paste URL */}
+                <div>
+                  <label className="text-slate-600 text-xs font-medium mb-1 block">Or paste image URL:</label>
+                  <div className="flex gap-2">
+                    <Input
+                      name="image_url"
+                      value={formData.image_url}
+                      onChange={handleChange}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                </div>
+
+                {/* Gallery Images */}
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Additional Images</label>
-                  <Textarea
-                    name="images"
-                    value={formData.images}
-                    onChange={handleChange}
-                    placeholder="Comma-separated URLs..."
-                    rows={2}
-                  />
+                  <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && uploadImages(e.target.files, false)} />
+
+                  {galleryImages.length > 0 && (
+                    <div className="flex flex-wrap gap-3 mb-3">
+                      {galleryImages.map((url, i) => (
+                        <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-light-200 group">
+                          <Image src={url} alt={`Gallery ${i + 1}`} fill className="object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryImage(i)}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-coral-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => galleryRef.current?.click()}
+                    className="w-24 h-24 rounded-xl border-2 border-dashed border-light-300 hover:border-primary-400 hover:bg-primary-50/50 transition-all flex flex-col items-center justify-center text-slate-400 hover:text-primary-500"
+                  >
+                    {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+                    <span className="text-xs mt-1">Add</span>
+                  </button>
                 </div>
               </div>
             </Card>
@@ -305,7 +396,7 @@ export default function NewProductPage() {
 
             {/* Actions */}
             <Card className="p-6 border-2 border-light-200 bg-gradient-to-br from-primary-50 to-white">
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || uploading}>
                 <Save className="mr-2 h-5 w-5" />
                 {loading ? 'Creating...' : 'Create Product'}
               </Button>
