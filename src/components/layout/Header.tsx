@@ -5,10 +5,12 @@ import { motion } from 'framer-motion'
 import { ShoppingCart, Search, Menu, X, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { useCart } from '@/lib/cart-context'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const { itemCount } = useCart()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -90,7 +92,7 @@ export function Header() {
                 <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-2xl">
                   <ShoppingCart className="h-5 w-5" />
                   <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-coral-400 to-coral-500 text-white text-xs flex items-center justify-center font-bold shadow-lg">
-                    0
+                    {itemCount || ''}
                   </span>
                 </Button>
               </Link>

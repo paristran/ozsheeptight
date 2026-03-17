@@ -20,6 +20,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/lib/cart-context'
 import { Product, Category } from '@/lib/types/database'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -77,8 +78,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     setLoading(false)
   }
 
+  const { addItem } = useCart()
+
   const handleAddToCart = () => {
-    // In a real app, this would add to a cart context or state
+    if (!product) return
+    addItem({
+      id: product.id,
+      title: product.title,
+      price: Number(product.price),
+      image_url: product.image_url,
+      stock_quantity: product.stock_quantity,
+      quantity,
+    })
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
   }
