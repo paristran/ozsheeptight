@@ -12,7 +12,8 @@ import {
   Eye,
   Package,
   Filter,
-  X
+  X,
+  Upload
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Product, Category } from '@/lib/types/database'
@@ -78,12 +79,20 @@ export default function AdminProductsPage() {
             {products.length} {products.length === 1 ? 'product' : 'products'} total
           </p>
         </div>
-        <Link href="/admin/products/new">
-          <Button>
-            <Plus className="mr-2 h-5 w-5" />
-            Add Product
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/admin/products/new">
+            <Button>
+              <Plus className="mr-2 h-5 w-5" />
+              Add Product
+            </Button>
+          </Link>
+          <Link href="/admin/products/bulk">
+            <Button variant="secondary">
+              <Upload className="mr-2 h-5 w-5" />
+              Bulk Upload
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
