@@ -17,7 +17,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { table, action, data, id, ids, filters } = body
 
-    const validTables = ['products', 'categories', 'orders']
+    const validTables = [
+      'products', 
+      'categories', 
+      'orders',
+      'variant_options',
+      'variant_values',
+      'product_variants',
+      'variant_value_combinations'
+    ]
     if (!validTables.includes(table)) {
       return NextResponse.json({ error: 'Invalid table' }, { status: 400 })
     }

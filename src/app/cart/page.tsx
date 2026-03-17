@@ -116,9 +116,16 @@ export default function CartPage() {
                                   {item.title}
                                 </h3>
                               </Link>
+                              {item.variant_title && (
+                                <p className="text-slate-500 text-sm mt-1 flex items-center gap-2">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-600 border border-primary-200">
+                                    {item.variant_title}
+                                  </span>
+                                </p>
+                              )}
                             </div>
                             <button
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(item.variant_id || item.id)}
                               className="text-slate-400 hover:text-coral-500 transition-colors p-2 hover:bg-coral-50 rounded-xl"
                             >
                               <X className="h-5 w-5" />
@@ -129,7 +136,7 @@ export default function CartPage() {
                             {/* Quantity Controls */}
                             <div className="flex items-center gap-3">
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.variant_id || item.id, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                                 className="w-10 h-10 rounded-2xl bg-light-100 border-2 border-light-200 flex items-center justify-center text-slate-600 hover:bg-primary-50 hover:border-primary-200 hover:text-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               >
@@ -139,7 +146,7 @@ export default function CartPage() {
                                 {item.quantity}
                               </span>
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.variant_id || item.id, item.quantity + 1)}
                                 disabled={item.quantity >= item.stock_quantity}
                                 className="w-10 h-10 rounded-2xl bg-light-100 border-2 border-light-200 flex items-center justify-center text-slate-600 hover:bg-primary-50 hover:border-primary-200 hover:text-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               >
@@ -150,11 +157,11 @@ export default function CartPage() {
                             {/* Price */}
                             <div className="text-right">
                               <div className="text-slate-800 font-bold text-lg">
-                                {formatPrice(item.price * item.quantity)}
+                                {formatPrice((item.variant_price !== undefined ? item.variant_price : item.price) * item.quantity)}
                               </div>
                               {item.quantity > 1 && (
                                 <div className="text-slate-400 text-sm">
-                                  {formatPrice(item.price)} each
+                                  {formatPrice(item.variant_price !== undefined ? item.variant_price : item.price)} each
                                 </div>
                               )}
                             </div>

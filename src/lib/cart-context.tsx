@@ -9,6 +9,10 @@ export interface CartItem {
   image_url: string | null
   quantity: number
   stock_quantity: number
+  // Variant support
+  variant_id?: string
+  variant_title?: string
+  variant_price?: number
 }
 
 interface CartContextType {
@@ -55,23 +59,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems(prev => {
-      const existing = prev.find(i => i.id === item.id)
+      // For variant items, use variant_id as unique key
+      const itemKey = item.variant_id || item.id
+      const existing = prev.find(i => {
+        const existingKey = i.variant_id || i.id
+        return existingKey === itemKey
+      })
+      
       if (existing) {
         const newQty = Math.min(existing.quantity + (item.quantity || 1), item.stock_quantity)
-        return prev.map(i => i.id === item.id ? { ...i, quantity: newQty } : i)
+        return prev.map(i => {
+          const iKey = i.variant_id || i.id
+          return iKey === itemKey ? { ...i, quantity: newQty } : i
+        })
       }
       return [...prev, { ...item, quantity: item.quantity || 1 }]
     })
   }
 
   const removeItem = (id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id))
+    setItems(prev => prev.filter(i => {
+      const itemKey = i.variant_id || i.id
+      return itemKey !== id
+    }))
   }
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) return
     setItems(prev => prev.map(i => {
-      if (i.id === id) {
+      const itemKey = i.variant_id || i.id
+      if (itemKey === id) {
         return { ...i, quantity: Math.min(quantity, i.stock_quantity) }
       }
       return i
@@ -80,7 +97,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setItems([])
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const total = items.reduce((sum, item) => {
+    const price = item.variant_price !== undefined ? item.variant_price : item.price
+    return sum + price * item.quantity
+  }, 0)
+  
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
   return (

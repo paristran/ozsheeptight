@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/cart-context'
-import { Product, Category } from '@/lib/types/database'
+import { Product, Category, ProductVariant, VariantOption } from '@/lib/types/database'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -32,11 +32,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [product, setProduct] = useState<Product | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+  const [variantOptions, setVariantOptions] = useState<VariantOption[]>([])
+  const [variants, setVariants] = useState<ProductVariant[]>([])
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [addedToCart, setAddedToCart] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [selectedValues, setSelectedValues] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchProduct()
@@ -73,29 +76,101 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           .limit(4) as any
         setRelatedProducts(relatedData || [])
       }
+
+      // Fetch variant options with values
+      const { data: optionsData } = await supabase
+        .from('variant_options')
+        .select(`
+          *,
+          values:variant_values(*)
+        `)
+        .eq('product_id', productData.id)
+        .order('position', { ascending: true }) as any
+      
+      if (optionsData && optionsData.length > 0) {
+        setVariantOptions(optionsData)
+        // Initialize selected values with first option of each
+        const initialSelections: Record<string, string> = {}
+        optionsData.forEach((opt: any) => {
+          if (opt.values && opt.values.length > 0) {
+            initialSelections[opt.id] = opt.values[0].id
+          }
+        })
+        setSelectedValues(initialSelections)
+      }
+
+      // Fetch variants with value combinations
+      const { data: variantsData } = await supabase
+        .from('product_variants')
+        .select(`
+          *,
+          value_combinations:variant_value_combinations(
+            value_id,
+            value:variant_values(*)
+          )
+        `)
+        .eq('product_id', productData.id)
+        .order('position', { ascending: true }) as any
+      
+      if (variantsData) {
+        setVariants(variantsData)
+      }
     }
     
     setLoading(false)
   }
 
+  // Find matching variant based on selected values
+  const selectedVariant = variants.find(variant => {
+    if (!variant.value_combinations || variant.value_combinations.length === 0) return false
+    const variantValueIds = variant.value_combinations.map((vc: any) => vc.value_id).sort()
+    const selectedValueIds = Object.values(selectedValues).sort()
+    return JSON.stringify(variantValueIds) === JSON.stringify(selectedValueIds)
+  })
+
+  // Determine current display values (variant or base product)
+  const displayPrice = selectedVariant ? Number(selectedVariant.price) : (product ? Number(product.price) : 0)
+  const displayComparePrice = selectedVariant 
+    ? (selectedVariant.compare_at_price ? Number(selectedVariant.compare_at_price) : null)
+    : (product?.compare_at_price ? Number(product.compare_at_price) : null)
+  const displayStock = selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity || 0)
+  const displayImage = selectedVariant?.image_url || product?.image_url
+
   const { addItem } = useCart()
 
   const handleAddToCart = () => {
     if (!product) return
-    addItem({
-      id: product.id,
-      title: product.title,
-      price: Number(product.price),
-      image_url: product.image_url,
-      stock_quantity: product.stock_quantity,
-      quantity,
-    })
+    
+    if (selectedVariant) {
+      // Add variant to cart
+      addItem({
+        id: product.id,
+        title: product.title,
+        price: Number(product.price),
+        image_url: selectedVariant.image_url || product.image_url,
+        stock_quantity: selectedVariant.stock_quantity,
+        quantity,
+        variant_id: selectedVariant.id,
+        variant_title: selectedVariant.title || undefined,
+        variant_price: Number(selectedVariant.price),
+      })
+    } else {
+      // Add base product to cart
+      addItem({
+        id: product.id,
+        title: product.title,
+        price: Number(product.price),
+        image_url: product.image_url,
+        stock_quantity: product.stock_quantity,
+        quantity,
+      })
+    }
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
   }
 
   const incrementQuantity = () => {
-    if (product && quantity < product.stock_quantity) {
+    if (quantity < displayStock) {
       setQuantity(q => q + 1)
     }
   }
@@ -104,6 +179,54 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (quantity > 1) {
       setQuantity(q => q - 1)
     }
+  }
+
+  // Handle variant option selection
+  const handleValueSelect = (optionId: string, valueId: string) => {
+    setSelectedValues(prev => ({
+      ...prev,
+      [optionId]: valueId
+    }))
+  }
+
+  // Color detection helper
+  const isColorOption = (name: string) => {
+    const colorKeywords = ['color', 'colour', 'colorway', 'farbe', 'couleur']
+    return colorKeywords.some(keyword => name.toLowerCase().includes(keyword))
+  }
+
+  // Get color hex from value name
+  const getColorHex = (value: string): string => {
+    const colorMap: Record<string, string> = {
+      'red': '#EF4444',
+      'blue': '#3B82F6',
+      'green': '#22C55E',
+      'yellow': '#F59E0B',
+      'purple': '#A855F7',
+      'pink': '#EC4899',
+      'orange': '#F97316',
+      'black': '#1F2937',
+      'white': '#F9FAFB',
+      'gray': '#6B7280',
+      'grey': '#6B7280',
+      'navy': '#1E3A8A',
+      'beige': '#D4B896',
+      'brown': '#92400E',
+      'tan': '#A3A086',
+      'cream': '#FFF8DC',
+      'gold': '#FFD700',
+      'silver': '#C0C0C0',
+    }
+    const lowerValue = value.toLowerCase()
+    for (const [name, hex] of Object.entries(colorMap)) {
+      if (lowerValue.includes(name)) return hex
+    }
+    // Generate a hash color if not found
+    let hash = 0
+    for (let i = 0; i < value.length; i++) {
+      hash = value.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    return `hsl(${hash % 360}, 70%, 60%)`
   }
 
   if (loading) {
@@ -140,6 +263,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   }
 
   const images = product.images || (product.image_url ? [product.image_url] : [])
+  const hasVariants = variantOptions.length > 0 && variants.length > 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-light-50 via-blue-50/30 to-purple-50/30">
@@ -181,9 +305,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           >
             {/* Main Image */}
             <Card className="relative aspect-square overflow-hidden border-2 border-light-200">
-              {images[selectedImage] ? (
+              {displayImage ? (
                 <Image
-                  src={images[selectedImage]}
+                  src={displayImage}
                   alt={product.title}
                   fill
                   className="object-cover"
@@ -201,9 +325,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
 
-              {product.compare_at_price && product.compare_at_price > product.price && (
+              {displayComparePrice && displayComparePrice > displayPrice && (
                 <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-gradient-to-r from-coral-400 to-coral-500 text-white text-sm font-semibold shadow-soft">
-                  Save {Math.round((1 - product.price / product.compare_at_price) * 100)}% 🎉
+                  Save {Math.round((1 - displayPrice / displayComparePrice) * 100)}% 🎉
                 </div>
               )}
             </Card>
@@ -268,11 +392,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* Price */}
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-slate-800">
-                {formatPrice(product.price)}
+                {formatPrice(displayPrice)}
               </span>
-              {product.compare_at_price && (
+              {displayComparePrice && (
                 <span className="text-2xl text-slate-400 line-through">
-                  {formatPrice(product.compare_at_price)}
+                  {formatPrice(displayComparePrice)}
                 </span>
               )}
             </div>
@@ -282,13 +406,72 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {product.description || 'No description available.'}
             </p>
 
+            {/* Variant Options */}
+            {hasVariants && variantOptions.map((option) => (
+              <div key={option.id} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-700 font-semibold">{option.name}:</span>
+                  {option.values && option.values.find(v => v.id === selectedValues[option.id]) && (
+                    <span className="text-slate-500">
+                      {option.values.find(v => v.id === selectedValues[option.id])?.value}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  {option.values && option.values.map((value) => {
+                    const isSelected = selectedValues[option.id] === value.id
+                    const colorHex = isColorOption(option.name) ? getColorHex(value.value) : null
+                    
+                    if (colorHex) {
+                      // Color swatches
+                      return (
+                        <button
+                          key={value.id}
+                          onClick={() => handleValueSelect(option.id, value.id)}
+                          className={`relative w-12 h-12 rounded-full border-2 transition-all ${
+                            isSelected
+                              ? 'ring-4 ring-primary-200 border-primary-500 scale-110'
+                              : 'border-light-300 hover:border-primary-300 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: colorHex }}
+                          title={value.value}
+                        >
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Check className={`h-5 w-5 ${colorHex === '#F9FAFB' || colorHex === '#FFF8DC' ? 'text-slate-800' : 'text-white'}`} />
+                            </div>
+                          )}
+                        </button>
+                      )
+                    } else {
+                      // Size/other buttons
+                      return (
+                        <button
+                          key={value.id}
+                          onClick={() => handleValueSelect(option.id, value.id)}
+                          className={`px-5 py-2.5 rounded-full border-2 font-medium transition-all ${
+                            isSelected
+                              ? 'bg-primary-500 border-primary-500 text-white shadow-md'
+                              : 'bg-white border-light-300 text-slate-700 hover:border-primary-300 hover:bg-primary-50'
+                          }`}
+                        >
+                          {value.value}
+                        </button>
+                      )
+                    }
+                  })}
+                </div>
+              </div>
+            ))}
+
             {/* Stock Status */}
             <div className="flex items-center gap-2">
-              {product.stock_quantity > 0 ? (
+              {displayStock > 0 ? (
                 <>
                   <div className="w-3 h-3 rounded-full bg-accent-400 animate-pulse" />
                   <span className="text-accent-600 font-medium">
-                    ✓ In Stock ({product.stock_quantity} available)
+                    ✓ In Stock ({displayStock} available)
                   </span>
                 </>
               ) : (
@@ -315,7 +498,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </span>
                 <button
                   onClick={incrementQuantity}
-                  disabled={quantity >= product.stock_quantity}
+                  disabled={quantity >= displayStock}
                   className="w-12 h-12 rounded-2xl bg-light-100 border-2 border-light-200 flex items-center justify-center text-slate-600 hover:bg-primary-50 hover:border-primary-200 hover:text-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   <Plus className="h-5 w-5" />
@@ -329,7 +512,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 size="lg"
                 className="flex-1"
                 onClick={handleAddToCart}
-                disabled={product.stock_quantity === 0 || addedToCart}
+                disabled={displayStock === 0 || addedToCart}
               >
                 {addedToCart ? (
                   <>
