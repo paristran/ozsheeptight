@@ -1,6 +1,11 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const getResendClient = () => {
+  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 're_placeholder') {
+    return null
+  }
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 export async function sendOrderConfirmation({
   email,
@@ -39,6 +44,13 @@ export async function sendOrderConfirmation({
         ${shippingAddress.city} ${shippingAddress.state} ${shippingAddress.postal_code}
       </p>`
     : ''
+
+  const resend = getResendClient()
+
+  if (!resend) {
+    console.warn('Resend API key not configured — skipping email')
+    return false
+  }
 
   const { data, error } = await resend.emails.send({
     from: 'OzSheepTight <orders@ozsheeptight.com>',
