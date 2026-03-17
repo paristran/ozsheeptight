@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { sendOrderConfirmation } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -77,6 +78,29 @@ export async function POST(req: NextRequest) {
 
     if (orderError) {
       console.error('Order creation error:', orderError)
+    }
+
+    // Send order confirmation email
+    if (order && !orderError && process.env.RESEND_API_KEY) {
+      const customerEmail = session.customer_email || session.metadata?.customer_email
+      const customerName = session.metadata?.customer_name || session.customer_details?.name || 'Customer'
+
+      if (customerEmail) {
+        const emailItems = (lineItems || []).map((item: any) => ({
+          title: item.description || 'Product',
+          quantity: item.quantity || 1,
+          price: (item.amount_total || 0) / (item.quantity || 1) / 100,
+        }))
+
+        await sendOrderConfirmation({
+          email: customerEmail,
+          name: customerName,
+          orderId: order.id,
+          total: (session.amount_total || 0) / 100,
+          items: emailItems,
+          shippingAddress: shippingAddr,
+        }).catch((err) => console.error('Failed to send confirmation email:', err))
+      }
     }
   }
 
