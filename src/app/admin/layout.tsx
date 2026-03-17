@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (mounted && !loading && !isAdmin) {
-      router.push('/login')
+      router.push('/adminlogin')
     }
   }, [mounted, loading, isAdmin, router])
 
@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Lock className="h-16 w-16 mx-auto text-slate-300 mb-4" />
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Admin Access Required 🔐</h1>
           <p className="text-slate-500 mb-6">Please sign in with your admin credentials</p>
-          <Link href="/login">
+          <Link href="/adminlogin">
             <Button size="lg">
               <LogIn className="mr-2 h-5 w-5" />
               Sign In

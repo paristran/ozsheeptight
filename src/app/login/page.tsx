@@ -4,37 +4,20 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Suspense } from 'react'
-import { LogIn, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
+import { LogIn, ArrowRight, AlertCircle, Shield } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 
 function LoginForm() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signInAsAdmin, signInWithGoogle, signInWithFacebook, user } = useAuth()
+  const { signInWithGoogle, signInWithFacebook, user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
   if (user) {
     router.push('/')
     return null
-  }
-
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    if (signInAsAdmin(username, password)) {
-      router.push('/admin')
-    } else {
-      setError('Invalid admin credentials')
-    }
-    setLoading(false)
   }
 
   const errorParam = searchParams.get('error')
@@ -104,46 +87,16 @@ function LoginForm() {
           <div className="flex-1 h-px bg-light-200" />
         </div>
 
-        {/* Admin Login */}
-        <Card className="p-6 border-2 border-light-200">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            🔐 Admin Login
-          </h2>
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div>
-              <label className="text-slate-600 text-sm font-medium mb-2 block">Username</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <Input
-                  placeholder="admin"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-slate-600 text-sm font-medium mb-2 block">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              <LogIn className="mr-2 h-5 w-5" />
-              Sign In as Admin
-            </Button>
-          </form>
-        </Card>
+        {/* Admin link */}
+        <div className="text-center">
+          <Button variant="ghost" onClick={() => router.push('/adminlogin')} className="text-slate-400 hover:text-slate-600 text-sm">
+            <Shield className="mr-2 h-4 w-4" />
+            Admin? Sign in here
+          </Button>
+        </div>
 
         {/* Back */}
-        <div className="text-center mt-6">
+        <div className="text-center mt-4">
           <Button variant="ghost" onClick={() => router.push('/')}>
             <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
             Back to Store
