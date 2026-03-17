@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -20,7 +19,6 @@ import { slugify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input, Textarea } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 
 export default function NewProductPage() {
   const router = useRouter()
@@ -106,13 +104,15 @@ export default function NewProductPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/admin/products">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="rounded-2xl">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-white">Add Product</h1>
-          <p className="text-dark-400 mt-1">Create a new product for your store</p>
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
+            📦 Add Product
+          </h1>
+          <p className="text-slate-500 mt-1">Create a new product for your store</p>
         </div>
       </div>
 
@@ -121,14 +121,14 @@ export default function NewProductPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <Card glass className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary-400" />
+            <Card className="p-6 border-2 border-light-200">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="text-xl">📝</span>
                 Basic Information
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Product Title *</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Product Title *</label>
                   <Input
                     name="title"
                     value={formData.title}
@@ -138,7 +138,7 @@ export default function NewProductPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Slug</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Slug</label>
                   <Input
                     name="slug"
                     value={formData.slug}
@@ -147,7 +147,7 @@ export default function NewProductPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Description</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Description</label>
                   <Textarea
                     name="description"
                     value={formData.description}
@@ -160,14 +160,14 @@ export default function NewProductPage() {
             </Card>
 
             {/* Pricing */}
-            <Card glass className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary-400" />
+            <Card className="p-6 border-2 border-light-200">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="text-xl">💰</span>
                 Pricing
               </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Price (AUD) *</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Price (AUD) *</label>
                   <Input
                     name="price"
                     type="number"
@@ -179,7 +179,7 @@ export default function NewProductPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Compare at Price</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Compare at Price</label>
                   <Input
                     name="compare_at_price"
                     type="number"
@@ -188,20 +188,20 @@ export default function NewProductPage() {
                     onChange={handleChange}
                     placeholder="0.00"
                   />
-                  <p className="text-dark-500 text-xs mt-1">Original price for showing discount</p>
+                  <p className="text-slate-400 text-xs mt-1">Original price for showing discount</p>
                 </div>
               </div>
             </Card>
 
             {/* Images */}
-            <Card glass className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-primary-400" />
+            <Card className="p-6 border-2 border-light-200">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="text-xl">🖼️</span>
                 Images
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Main Image URL</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Main Image URL</label>
                   <Input
                     name="image_url"
                     value={formData.image_url}
@@ -210,7 +210,7 @@ export default function NewProductPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Additional Images</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Additional Images</label>
                   <Textarea
                     name="images"
                     value={formData.images}
@@ -226,39 +226,41 @@ export default function NewProductPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Status */}
-            <Card glass className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Status</h2>
+            <Card className="p-6 border-2 border-light-200">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="text-xl">⚙️</span>
+                Status
+              </h2>
               <div className="space-y-4">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-dark-300">Active</span>
+                <label className="flex items-center justify-between cursor-pointer p-3 rounded-2xl hover:bg-light-50 transition-colors">
+                  <span className="text-slate-600 font-medium">Active</span>
                   <div
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      formData.active ? 'bg-primary-500' : 'bg-dark-700'
+                    className={`w-14 h-7 rounded-full transition-colors ${
+                      formData.active ? 'bg-primary-400' : 'bg-light-300'
                     }`}
                     onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
                   >
                     <div
-                      className={`w-5 h-5 rounded-full bg-white transform transition-transform ${
-                        formData.active ? 'translate-x-5' : 'translate-x-0.5'
-                      } mt-0.5`}
+                      className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                        formData.active ? 'translate-x-8' : 'translate-x-1'
+                      } mt-1`}
                     />
                   </div>
                 </label>
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-dark-300 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-yellow-400" />
-                    Featured
+                <label className="flex items-center justify-between cursor-pointer p-3 rounded-2xl hover:bg-secondary-50 transition-colors">
+                  <span className="text-slate-600 font-medium flex items-center gap-2">
+                    ⭐ Featured
                   </span>
                   <div
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      formData.featured ? 'bg-primary-500' : 'bg-dark-700'
+                    className={`w-14 h-7 rounded-full transition-colors ${
+                      formData.featured ? 'bg-secondary-400' : 'bg-light-300'
                     }`}
                     onClick={() => setFormData(prev => ({ ...prev, featured: !prev.featured }))}
                   >
                     <div
-                      className={`w-5 h-5 rounded-full bg-white transform transition-transform ${
-                        formData.featured ? 'translate-x-5' : 'translate-x-0.5'
-                      } mt-0.5`}
+                      className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                        formData.featured ? 'translate-x-8' : 'translate-x-1'
+                      } mt-1`}
                     />
                   </div>
                 </label>
@@ -266,19 +268,19 @@ export default function NewProductPage() {
             </Card>
 
             {/* Organization */}
-            <Card glass className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Tag className="h-5 w-5 text-primary-400" />
+            <Card className="p-6 border-2 border-light-200">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="text-xl">📂</span>
                 Organization
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Category</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Category</label>
                   <select
                     name="category_id"
                     value={formData.category_id}
                     onChange={handleChange}
-                    className="w-full h-11 px-4 rounded-xl border border-dark-700/50 bg-dark-800/50 backdrop-blur-xl text-dark-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 appearance-none cursor-pointer"
+                    className="w-full h-12 px-4 rounded-2xl border-2 border-light-300 bg-white text-slate-700 text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 appearance-none cursor-pointer"
                   >
                     <option value="">Select category</option>
                     {categories.map(cat => (
@@ -287,7 +289,7 @@ export default function NewProductPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-dark-300 text-sm mb-2 block">Stock Quantity</label>
+                  <label className="text-slate-600 text-sm font-medium mb-2 block">Stock Quantity</label>
                   <Input
                     name="stock_quantity"
                     type="number"
@@ -300,9 +302,9 @@ export default function NewProductPage() {
             </Card>
 
             {/* Actions */}
-            <Card glass className="p-6">
+            <Card className="p-6 border-2 border-light-200 bg-gradient-to-br from-primary-50 to-white">
               <Button type="submit" className="w-full" disabled={loading}>
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 h-5 w-5" />
                 {loading ? 'Creating...' : 'Create Product'}
               </Button>
             </Card>

@@ -15,32 +15,32 @@ import {
 import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Products', href: '/admin/products', icon: Package },
-  { name: 'Categories', href: '/admin/categories', icon: FolderTree },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, emoji: '📊' },
+  { name: 'Products', href: '/admin/products', icon: Package, emoji: '📦' },
+  { name: 'Categories', href: '/admin/categories', icon: FolderTree, emoji: '📂' },
+  { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, emoji: '🛒' },
+  { name: 'Settings', href: '/admin/settings', icon: Settings, emoji: '⚙️' },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 min-h-screen bg-dark-950/50 backdrop-blur-xl border-r border-dark-700/30">
+    <aside className="w-64 min-h-screen bg-gradient-to-b from-slate-50 to-white border-r-2 border-light-200 shadow-soft">
       <div className="p-6">
         {/* Logo */}
-        <Link href="/admin" className="flex items-center space-x-3 mb-8">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
-            <Store className="h-5 w-5 text-white" />
+        <Link href="/admin" className="flex items-center space-x-3 mb-8 group">
+          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary-400 to-purple-400 flex items-center justify-center shadow-soft group-hover:scale-105 transition-transform">
+            <Store className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-white font-bold text-lg">Admin</h1>
-            <p className="text-dark-400 text-xs">OzSheepTight</p>
+            <h1 className="text-slate-800 font-bold text-lg">Admin</h1>
+            <p className="text-slate-400 text-xs">OzSheepTight</p>
           </div>
         </Link>
 
         {/* Navigation */}
-        <nav className="space-y-1">
+        <nav className="space-y-2">
           {navigation.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/admin' && pathname.startsWith(item.href))
@@ -50,13 +50,13 @@ export function AdminSidebar() {
                 <motion.div
                   whileHover={{ x: 4 }}
                   className={cn(
-                    'flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200',
+                    'flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-200',
                     isActive
-                      ? 'bg-gradient-to-r from-primary-600/20 to-primary-500/10 text-white border border-primary-500/30'
-                      : 'text-dark-400 hover:text-white hover:bg-dark-800/50'
+                      ? 'bg-gradient-to-r from-primary-100 to-primary-50 text-primary-700 border-2 border-primary-200'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-light-50 border-2 border-transparent'
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <span className="text-xl">{item.emoji}</span>
                   <span className="text-sm font-medium">{item.name}</span>
                 </motion.div>
               </Link>
@@ -65,21 +65,21 @@ export function AdminSidebar() {
         </nav>
 
         {/* Back to Store */}
-        <div className="mt-8 pt-8 border-t border-dark-700/30">
+        <div className="mt-8 pt-8 border-t-2 border-light-200">
           <Link href="/">
             <motion.div
               whileHover={{ x: 4 }}
-              className="flex items-center space-x-3 px-4 py-3 rounded-xl text-dark-400 hover:text-white hover:bg-dark-800/50 transition-all duration-200"
+              className="flex items-center space-x-3 px-4 py-3 rounded-2xl text-slate-500 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 border-2 border-transparent hover:border-primary-200"
             >
-              <Store className="h-5 w-5" />
+              <span className="text-xl">🏪</span>
               <span className="text-sm font-medium">View Store</span>
             </motion.div>
           </Link>
           
           <button
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 mt-2"
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-coral-500 hover:text-coral-600 hover:bg-coral-50 transition-all duration-200 mt-2 border-2 border-transparent hover:border-coral-200"
           >
-            <LogOut className="h-5 w-5" />
+            <span className="text-xl">🚪</span>
             <span className="text-sm font-medium">Sign Out</span>
           </button>
         </div>

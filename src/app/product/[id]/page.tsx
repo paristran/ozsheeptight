@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, use } from 'react'
@@ -16,7 +15,9 @@ import {
   Shield, 
   RotateCcw,
   ChevronRight,
-  Check
+  Check,
+  Gift,
+  Sparkles
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Product, Category } from '@/lib/types/database'
@@ -34,6 +35,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [addedToCart, setAddedToCart] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
     fetchProduct()
@@ -95,16 +97,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-950 py-24">
+      <div className="min-h-screen bg-gradient-to-br from-light-50 via-blue-50/30 to-purple-50/30 py-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="animate-pulse grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="aspect-square bg-dark-800 rounded-3xl" />
+            <div className="aspect-square bg-light-200 rounded-3xl" />
             <div className="space-y-6">
-              <div className="h-8 bg-dark-800 rounded w-1/3" />
-              <div className="h-12 bg-dark-800 rounded w-3/4" />
-              <div className="h-6 bg-dark-800 rounded w-1/4" />
-              <div className="h-32 bg-dark-800 rounded" />
-              <div className="h-12 bg-dark-800 rounded w-1/3" />
+              <div className="h-8 bg-light-200 rounded-full w-1/3" />
+              <div className="h-12 bg-light-200 rounded-full w-3/4" />
+              <div className="h-6 bg-light-200 rounded-full w-1/4" />
+              <div className="h-32 bg-light-200 rounded-2xl" />
+              <div className="h-12 bg-light-200 rounded-full w-1/3" />
             </div>
           </div>
         </div>
@@ -114,9 +116,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-light-50 via-blue-50/30 to-purple-50/30 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Product Not Found</h1>
+          <div className="text-6xl mb-4">😢</div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Product Not Found</h1>
           <Link href="/products">
             <Button>Back to Products</Button>
           </Link>
@@ -128,31 +131,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const images = product.images || (product.image_url ? [product.image_url] : [])
 
   return (
-    <div className="min-h-screen bg-dark-950">
+    <div className="min-h-screen bg-gradient-to-br from-light-50 via-blue-50/30 to-purple-50/30">
       {/* Breadcrumb */}
-      <div className="py-6 border-b border-dark-700/30">
+      <div className="py-6 bg-white/50 border-b border-light-200">
         <div className="max-w-7xl mx-auto px-6">
           <nav className="flex items-center gap-2 text-sm">
-            <Link href="/" className="text-dark-400 hover:text-white transition-colors">
-              Home
+            <Link href="/" className="text-slate-500 hover:text-primary-600 transition-colors">
+              🏠 Home
             </Link>
-            <ChevronRight className="h-4 w-4 text-dark-600" />
-            <Link href="/products" className="text-dark-400 hover:text-white transition-colors">
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <Link href="/products" className="text-slate-500 hover:text-primary-600 transition-colors">
               Products
             </Link>
             {category && (
               <>
-                <ChevronRight className="h-4 w-4 text-dark-600" />
+                <ChevronRight className="h-4 w-4 text-slate-300" />
                 <Link 
                   href={`/category/${category.id}`}
-                  className="text-dark-400 hover:text-white transition-colors"
+                  className="text-slate-500 hover:text-primary-600 transition-colors"
                 >
                   {category.name}
                 </Link>
               </>
             )}
-            <ChevronRight className="h-4 w-4 text-dark-600" />
-            <span className="text-white">{product.title}</span>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <span className="text-slate-800 font-medium">{product.title}</span>
           </nav>
         </div>
       </div>
@@ -166,7 +169,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             className="space-y-4"
           >
             {/* Main Image */}
-            <Card glass className="relative aspect-square overflow-hidden">
+            <Card className="relative aspect-square overflow-hidden border-2 border-light-200">
               {images[selectedImage] ? (
                 <Image
                   src={images[selectedImage]}
@@ -176,20 +179,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   priority
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-secondary-500/20 flex items-center justify-center">
-                  <span className="text-dark-500 text-lg">No image available</span>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-purple-50 flex items-center justify-center">
+                  <span className="text-8xl">🐑</span>
                 </div>
               )}
               
               {product.featured && (
-                <div className="absolute top-6 left-6 px-4 py-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 text-white text-sm font-medium shadow-lg">
-                  Featured
+                <div className="absolute top-6 left-6 px-4 py-2 rounded-full bg-gradient-to-r from-secondary-300 to-secondary-400 text-slate-800 text-sm font-semibold shadow-soft">
+                  ⭐ Featured
                 </div>
               )}
 
               {product.compare_at_price && product.compare_at_price > product.price && (
-                <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-red-500 text-white text-sm font-medium">
-                  Save {Math.round((1 - product.price / product.compare_at_price) * 100)}%
+                <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-gradient-to-r from-coral-400 to-coral-500 text-white text-sm font-semibold shadow-soft">
+                  Save {Math.round((1 - product.price / product.compare_at_price) * 100)}% 🎉
                 </div>
               )}
             </Card>
@@ -201,10 +204,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`relative w-24 h-24 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
+                    className={`relative w-24 h-24 rounded-2xl overflow-hidden shrink-0 border-2 transition-all ${
                       selectedImage === index
-                        ? 'border-primary-500'
-                        : 'border-dark-700/50 hover:border-dark-600'
+                        ? 'border-primary-400 ring-4 ring-primary-100'
+                        : 'border-light-200 hover:border-primary-200'
                     }`}
                   >
                     <Image
@@ -228,14 +231,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* Category Badge */}
             {category && (
               <Link href={`/category/${category.id}`}>
-                <Badge variant="secondary" className="hover:bg-dark-700 transition-colors">
-                  {category.name}
+                <Badge variant="secondary" className="hover:bg-primary-100 hover:text-primary-700 transition-colors">
+                  📂 {category.name}
                 </Badge>
               </Link>
             )}
 
             {/* Title */}
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 leading-tight">
               {product.title}
             </h1>
 
@@ -243,28 +246,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  <Star key={i} className="w-5 h-5 text-secondary-400 fill-secondary-400" />
                 ))}
               </div>
-              <span className="text-dark-400">
-                4.9 (128 reviews)
+              <span className="text-slate-500">
+                4.9 (128 reviews) ⭐
               </span>
             </div>
 
             {/* Price */}
             <div className="flex items-baseline gap-4">
-              <span className="text-4xl font-bold text-white">
+              <span className="text-4xl font-bold text-slate-800">
                 {formatPrice(product.price)}
               </span>
               {product.compare_at_price && (
-                <span className="text-2xl text-dark-500 line-through">
+                <span className="text-2xl text-slate-400 line-through">
                   {formatPrice(product.compare_at_price)}
                 </span>
               )}
             </div>
 
             {/* Description */}
-            <p className="text-dark-300 text-lg leading-relaxed">
+            <p className="text-slate-600 text-lg leading-relaxed">
               {product.description || 'No description available.'}
             </p>
 
@@ -272,39 +275,39 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="flex items-center gap-2">
               {product.stock_quantity > 0 ? (
                 <>
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-green-400">
-                    In Stock ({product.stock_quantity} available)
+                  <div className="w-3 h-3 rounded-full bg-accent-400 animate-pulse" />
+                  <span className="text-accent-600 font-medium">
+                    ✓ In Stock ({product.stock_quantity} available)
                   </span>
                 </>
               ) : (
                 <>
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="text-red-400">Out of Stock</span>
+                  <div className="w-3 h-3 rounded-full bg-coral-400" />
+                  <span className="text-coral-500 font-medium">Out of Stock</span>
                 </>
               )}
             </div>
 
             {/* Quantity Selector */}
             <div className="flex items-center gap-6">
-              <span className="text-dark-300">Quantity:</span>
+              <span className="text-slate-600 font-medium">Quantity:</span>
               <div className="flex items-center gap-4">
                 <button
                   onClick={decrementQuantity}
                   disabled={quantity <= 1}
-                  className="w-10 h-10 rounded-xl bg-dark-800/50 border border-dark-700/50 flex items-center justify-center text-white hover:bg-dark-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-12 h-12 rounded-2xl bg-light-100 border-2 border-light-200 flex items-center justify-center text-slate-600 hover:bg-primary-50 hover:border-primary-200 hover:text-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-5 w-5" />
                 </button>
-                <span className="w-12 text-center text-white font-medium text-lg">
+                <span className="w-14 text-center text-slate-800 font-bold text-xl">
                   {quantity}
                 </span>
                 <button
                   onClick={incrementQuantity}
                   disabled={quantity >= product.stock_quantity}
-                  className="w-10 h-10 rounded-xl bg-dark-800/50 border border-dark-700/50 flex items-center justify-center text-white hover:bg-dark-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-12 h-12 rounded-2xl bg-light-100 border-2 border-light-200 flex items-center justify-center text-slate-600 hover:bg-primary-50 hover:border-primary-200 hover:text-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -320,7 +323,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 {addedToCart ? (
                   <>
                     <Check className="mr-2 h-5 w-5" />
-                    Added to Cart!
+                    Added to Cart! 🎉
                   </>
                 ) : (
                   <>
@@ -329,8 +332,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </>
                 )}
               </Button>
-              <Button size="lg" variant="secondary">
-                <Heart className="h-5 w-5" />
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => setIsFavorite(!isFavorite)}
+                className={isFavorite ? 'bg-pink-50 border-pink-200 text-pink-600' : ''}
+              >
+                <Heart className={`h-5 w-5 ${isFavorite ? 'fill-pink-500 text-pink-500' : ''}`} />
               </Button>
               <Button size="lg" variant="secondary">
                 <Share2 className="h-5 w-5" />
@@ -338,20 +346,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-dark-700/30">
-              <div className="text-center p-4">
-                <Truck className="h-6 w-6 mx-auto mb-2 text-primary-400" />
-                <span className="text-dark-300 text-sm">Free Shipping</span>
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-light-200">
+              <div className="text-center p-4 rounded-2xl bg-primary-50">
+                <Truck className="h-6 w-6 mx-auto mb-2 text-primary-500" />
+                <span className="text-slate-600 text-sm font-medium">Free Shipping</span>
               </div>
-              <div className="text-center p-4">
-                <Shield className="h-6 w-6 mx-auto mb-2 text-primary-400" />
-                <span className="text-dark-300 text-sm">2 Year Warranty</span>
+              <div className="text-center p-4 rounded-2xl bg-accent-50">
+                <Shield className="h-6 w-6 mx-auto mb-2 text-accent-500" />
+                <span className="text-slate-600 text-sm font-medium">2 Year Warranty</span>
               </div>
-              <div className="text-center p-4">
-                <RotateCcw className="h-6 w-6 mx-auto mb-2 text-primary-400" />
-                <span className="text-dark-300 text-sm">30 Day Returns</span>
+              <div className="text-center p-4 rounded-2xl bg-purple-50">
+                <RotateCcw className="h-6 w-6 mx-auto mb-2 text-purple-500" />
+                <span className="text-slate-600 text-sm font-medium">30 Day Returns</span>
               </div>
             </div>
+
+            {/* Gift Wrap Option */}
+            <Card className="p-4 border-2 border-light-200 bg-gradient-to-r from-secondary-50 to-white">
+              <div className="flex items-center gap-3">
+                <Gift className="h-6 w-6 text-secondary-500" />
+                <div>
+                  <p className="text-slate-800 font-medium">Gift wrapping available! 🎁</p>
+                  <p className="text-slate-500 text-sm">Add a personal message at checkout</p>
+                </div>
+              </div>
+            </Card>
           </motion.div>
         </div>
 
@@ -364,7 +383,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             className="mt-24"
           >
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold text-white">You May Also Like</h2>
+              <div>
+                <span className="text-purple-500 font-semibold text-lg mb-2 block">✨ You May Also Like</span>
+                <h2 className="text-3xl font-bold text-slate-800">Related Products</h2>
+              </div>
               <Link href={`/category/${category?.id}`}>
                 <Button variant="ghost">View All</Button>
               </Link>
@@ -378,8 +400,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   transition={{ delay: 0.1 * index }}
                 >
                   <Link href={`/product/${relatedProduct.id}`}>
-                    <Card glass className="group overflow-hidden hover:border-primary-500/50 transition-all duration-300">
-                      <div className="relative aspect-square overflow-hidden">
+                    <Card className="group overflow-hidden border-2 border-transparent hover:border-primary-200 transition-all duration-300">
+                      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-primary-50 to-purple-50">
                         {relatedProduct.image_url ? (
                           <Image
                             src={relatedProduct.image_url}
@@ -388,14 +410,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             className="object-cover group-hover:scale-110 transition-transform duration-500"
                           />
                         ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-secondary-500/20" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-4xl">🐑</span>
+                          </div>
                         )}
                       </div>
-                      <div className="p-4">
-                        <h3 className="text-white font-medium mb-2 group-hover:text-primary-300 transition-colors line-clamp-1">
+                      <div className="p-4 bg-white">
+                        <h3 className="text-slate-800 font-medium mb-2 group-hover:text-primary-600 transition-colors line-clamp-1">
                           {relatedProduct.title}
                         </h3>
-                        <span className="text-white font-bold">
+                        <span className="text-slate-800 font-bold">
                           {formatPrice(relatedProduct.price)}
                         </span>
                       </div>

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -152,124 +151,140 @@ export default function AdminCategoriesPage() {
     cat.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Card color variations
+  const cardColors = [
+    { bg: 'from-primary-50 to-white', border: 'border-primary-100 hover:border-primary-200' },
+    { bg: 'from-purple-50 to-white', border: 'border-purple-100 hover:border-purple-200' },
+    { bg: 'from-accent-50 to-white', border: 'border-accent-100 hover:border-accent-200' },
+    { bg: 'from-secondary-50 to-white', border: 'border-secondary-100 hover:border-secondary-200' },
+    { bg: 'from-pink-50 to-white', border: 'border-pink-100 hover:border-pink-200' },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Categories</h1>
-          <p className="text-dark-400 mt-1">
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
+            📂 Categories
+          </h1>
+          <p className="text-slate-500 mt-1">
             {categories.length} {categories.length === 1 ? 'category' : 'categories'} total
           </p>
         </div>
         <Button onClick={openAddModal}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-5 w-5" />
           Add Category
         </Button>
       </div>
 
       {/* Search */}
-      <Card glass className="p-4">
+      <Card className="p-4 border-2 border-light-200">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-dark-500" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <Input
             placeholder="Search categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-12"
           />
         </div>
       </Card>
 
-      {/* Categories Grid */}
+      {/* Loading State */}
       {loading ? (
         <div className="p-8 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto" />
-          <p className="text-dark-400 mt-4">Loading categories...</p>
+          <div className="spinner-fun mx-auto" />
+          <p className="text-slate-500 mt-4">Loading categories...</p>
         </div>
       ) : filteredCategories.length === 0 ? (
-        <Card glass className="p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-dark-800/50 flex items-center justify-center">
-            <FolderTree className="h-8 w-8 text-dark-500" />
+        <Card className="p-12 text-center border-2 border-light-200">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+            <FolderTree className="h-10 w-10 text-purple-400" />
           </div>
-          <h3 className="text-white text-lg font-semibold mb-2">No categories found</h3>
-          <p className="text-dark-400 mb-6">
+          <h3 className="text-slate-800 text-lg font-semibold mb-2">No categories found</h3>
+          <p className="text-slate-500 mb-6">
             {searchQuery ? 'Try adjusting your search' : 'Get started by adding your first category'}
           </p>
           {!searchQuery && (
             <Button onClick={openAddModal}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-5 w-5" />
               Add Category
             </Button>
           )}
         </Card>
       ) : (
+        /* Categories Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence>
-            {filteredCategories.map((category, index) => (
-              <motion.div
-                key={category.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card glass className="group overflow-hidden hover:border-primary-500/50 transition-all duration-300">
-                  {/* Image */}
-                  <div className="relative h-40 bg-dark-800/50">
-                    {category.image_url ? (
-                      <Image
-                        src={category.image_url}
-                        alt={category.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <ImageIcon className="h-10 w-10 text-dark-600" />
+            {filteredCategories.map((category, index) => {
+              const colorScheme = cardColors[index % cardColors.length]
+              
+              return (
+                <motion.div
+                  key={category.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Card className={`group overflow-hidden border-2 ${colorScheme.border} bg-gradient-to-br ${colorScheme.bg} transition-all duration-300`}>
+                    {/* Image */}
+                    <div className="relative h-40 bg-gradient-to-br from-light-100 to-light-50">
+                      {category.image_url ? (
+                        <Image
+                          src={category.image_url}
+                          alt={category.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-5xl">📂</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
+                      
+                      {/* Actions Overlay */}
+                      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-9 w-9 rounded-xl bg-white/90 backdrop-blur-sm"
+                          onClick={() => openEditModal(category)}
+                        >
+                          <Edit className="h-4 w-4 text-slate-600" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-9 w-9 rounded-xl"
+                          onClick={() => setShowDeleteModal(category.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-dark-900 to-transparent opacity-60" />
-                    
-                    {/* Actions Overlay */}
-                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openEditModal(category)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setShowDeleteModal(category.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </div>
 
-                  {/* Content */}
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-white font-semibold text-lg">{category.name}</h3>
-                      <Badge variant="secondary">{category.product_count} products</Badge>
-                    </div>
-                    {category.description && (
-                      <p className="text-dark-400 text-sm line-clamp-2 mb-3">
-                        {category.description}
+                    {/* Content */}
+                    <div className="p-5">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-slate-800 font-bold text-lg">{category.name}</h3>
+                        <Badge variant="secondary">{category.product_count} products</Badge>
+                      </div>
+                      {category.description && (
+                        <p className="text-slate-500 text-sm line-clamp-2 mb-3">
+                          {category.description}
+                        </p>
+                      )}
+                      <p className="text-slate-400 text-xs flex items-center gap-1">
+                        📅 Created {formatDate(category.created_at)}
                       </p>
-                    )}
-                    <p className="text-dark-500 text-xs">
-                      Created {formatDate(category.created_at)}
-                    </p>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
+                    </div>
+                  </Card>
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
         </div>
       )}
@@ -281,7 +296,7 @@ export default function AdminCategoriesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-dark-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -289,14 +304,14 @@ export default function AdminCategoriesPage() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="w-full max-w-lg"
             >
-              <Card glass className="p-6">
+              <Card className="p-6 border-2 border-light-200">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-white">
-                    {showModal === 'add' ? 'Add Category' : 'Edit Category'}
+                  <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    {showModal === 'add' ? '📂 Add Category' : '✏️ Edit Category'}
                   </h3>
                   <button
                     onClick={() => setShowModal(null)}
-                    className="text-dark-400 hover:text-white"
+                    className="text-slate-400 hover:text-slate-600 p-2 hover:bg-light-100 rounded-xl transition-colors"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -304,7 +319,7 @@ export default function AdminCategoriesPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-dark-300 text-sm mb-2 block">Name *</label>
+                    <label className="text-slate-600 text-sm font-medium mb-2 block">Name *</label>
                     <Input
                       name="name"
                       value={formData.name}
@@ -313,7 +328,7 @@ export default function AdminCategoriesPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-dark-300 text-sm mb-2 block">Slug</label>
+                    <label className="text-slate-600 text-sm font-medium mb-2 block">Slug</label>
                     <Input
                       name="slug"
                       value={formData.slug}
@@ -322,7 +337,7 @@ export default function AdminCategoriesPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-dark-300 text-sm mb-2 block">Description</label>
+                    <label className="text-slate-600 text-sm font-medium mb-2 block">Description</label>
                     <Textarea
                       name="description"
                       value={formData.description}
@@ -332,7 +347,7 @@ export default function AdminCategoriesPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-dark-300 text-sm mb-2 block">Image URL</label>
+                    <label className="text-slate-600 text-sm font-medium mb-2 block">Image URL</label>
                     <Input
                       name="image_url"
                       value={formData.image_url}
@@ -371,18 +386,23 @@ export default function AdminCategoriesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-dark-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
             >
-              <Card glass className="p-6 max-w-md w-full">
-                <h3 className="text-xl font-semibold text-white mb-2">Delete Category</h3>
-                <p className="text-dark-400 mb-6">
-                  Are you sure you want to delete this category? Products in this category will become uncategorized.
-                </p>
+              <Card className="p-6 max-w-md w-full border-2 border-light-200">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-coral-100 flex items-center justify-center">
+                    <span className="text-3xl">⚠️</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Category</h3>
+                  <p className="text-slate-500">
+                    Are you sure? Products in this category will become uncategorized.
+                  </p>
+                </div>
                 <div className="flex gap-3">
                   <Button
                     variant="secondary"

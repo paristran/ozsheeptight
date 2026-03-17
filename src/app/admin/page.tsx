@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -12,7 +11,9 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowUpRight,
-  Sparkles
+  Sparkles,
+  CheckCircle,
+  Circle
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatPrice } from '@/lib/utils'
@@ -84,24 +85,27 @@ export default function AdminDashboard() {
       value: stats.totalProducts,
       icon: Package,
       href: '/admin/products',
-      color: 'from-blue-500 to-blue-600',
-      bg: 'bg-blue-500/10',
+      gradient: 'from-primary-400 to-primary-500',
+      bg: 'bg-primary-50',
+      emoji: '📦',
     },
     {
       title: 'Categories',
       value: stats.totalCategories,
       icon: FolderTree,
       href: '/admin/categories',
-      color: 'from-purple-500 to-purple-600',
-      bg: 'bg-purple-500/10',
+      gradient: 'from-purple-400 to-purple-500',
+      bg: 'bg-purple-50',
+      emoji: '📂',
     },
     {
       title: 'Total Orders',
       value: stats.totalOrders,
       icon: ShoppingCart,
       href: '/admin/orders',
-      color: 'from-green-500 to-green-600',
-      bg: 'bg-green-500/10',
+      gradient: 'from-accent-400 to-accent-500',
+      bg: 'bg-accent-50',
+      emoji: '🛒',
       change: stats.ordersChange,
     },
     {
@@ -109,8 +113,9 @@ export default function AdminDashboard() {
       value: formatPrice(stats.totalRevenue),
       icon: DollarSign,
       href: '/admin/orders',
-      color: 'from-amber-500 to-amber-600',
-      bg: 'bg-amber-500/10',
+      gradient: 'from-secondary-400 to-secondary-500',
+      bg: 'bg-secondary-50',
+      emoji: '💰',
       change: stats.revenueChange,
     },
   ]
@@ -118,15 +123,16 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-dark-400 mt-1">Welcome back! Here's your store overview.</p>
+          <h1 className="text-3xl font-bold text-slate-800">Dashboard 📊</h1>
+          <p className="text-slate-500 mt-1">Welcome back! Here's your store overview.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 border border-green-500/30">
-            <Sparkles className="h-4 w-4 text-green-400" />
-            <span className="text-green-400 text-sm font-medium">Store Active</span>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-accent-50 border-2 border-accent-200">
+            <Sparkles className="h-4 w-4 text-accent-500" />
+            <span className="text-accent-600 text-sm font-semibold">Store Active</span>
+            <span className="text-lg">✅</span>
           </div>
         </div>
       </div>
@@ -141,17 +147,17 @@ export default function AdminDashboard() {
             transition={{ delay: index * 0.1 }}
           >
             <Link href={stat.href}>
-              <Card glass className="p-6 hover:border-primary-500/50 transition-all duration-300 group cursor-pointer">
+              <Card className="p-6 border-2 border-transparent hover:border-primary-200 transition-all duration-300 group cursor-pointer">
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${stat.bg}`}>
-                    <stat.icon className={`h-6 w-6 bg-gradient-to-r ${stat.color} bg-clip-text`} style={{ color: stat.color.includes('blue') ? '#3b82f6' : stat.color.includes('purple') ? '#a855f7' : stat.color.includes('green') ? '#22c55e' : '#f59e0b' }} />
+                  <div className={`p-3 rounded-2xl ${stat.bg}`}>
+                    <span className="text-2xl">{stat.emoji}</span>
                   </div>
-                  <ArrowUpRight className="h-5 w-5 text-dark-600 group-hover:text-primary-400 transition-colors" />
+                  <ArrowUpRight className="h-5 w-5 text-slate-300 group-hover:text-primary-500 transition-colors" />
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-dark-400 text-sm">{stat.title}</p>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-slate-500 text-sm font-medium">{stat.title}</p>
+                  <p className="text-2xl font-bold text-slate-800">
                     {loading ? '...' : stat.value}
                   </p>
                 </div>
@@ -159,14 +165,14 @@ export default function AdminDashboard() {
                 {stat.change !== undefined && (
                   <div className="flex items-center gap-1 mt-3">
                     {stat.change >= 0 ? (
-                      <TrendingUp className="h-4 w-4 text-green-400" />
+                      <TrendingUp className="h-4 w-4 text-accent-500" />
                     ) : (
-                      <TrendingDown className="h-4 w-4 text-red-400" />
+                      <TrendingDown className="h-4 w-4 text-coral-500" />
                     )}
-                    <span className={stat.change >= 0 ? 'text-green-400 text-sm' : 'text-red-400 text-sm'}>
+                    <span className={stat.change >= 0 ? 'text-accent-600 text-sm font-medium' : 'text-coral-500 text-sm font-medium'}>
                       {stat.change >= 0 ? '+' : ''}{stat.change}%
                     </span>
-                    <span className="text-dark-500 text-sm">vs last week</span>
+                    <span className="text-slate-400 text-sm">vs last week</span>
                   </div>
                 )}
               </Card>
@@ -181,24 +187,26 @@ export default function AdminDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card glass className="p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+        <Card className="p-6 border-2 border-light-200">
+          <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            ⚡ Quick Actions
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link href="/admin/products/new">
-              <Button variant="secondary" className="w-full justify-start">
-                <Package className="mr-2 h-4 w-4" />
+              <Button variant="secondary" className="w-full justify-start hover:border-primary-200">
+                <span className="mr-2">📦</span>
                 Add New Product
               </Button>
             </Link>
             <Link href="/admin/categories">
-              <Button variant="secondary" className="w-full justify-start">
-                <FolderTree className="mr-2 h-4 w-4" />
+              <Button variant="secondary" className="w-full justify-start hover:border-purple-200">
+                <span className="mr-2">📂</span>
                 Manage Categories
               </Button>
             </Link>
             <Link href="/admin/orders">
-              <Button variant="secondary" className="w-full justify-start">
-                <ShoppingCart className="mr-2 h-4 w-4" />
+              <Button variant="secondary" className="w-full justify-start hover:border-accent-200">
+                <span className="mr-2">🛒</span>
                 View Orders
               </Button>
             </Link>
@@ -206,54 +214,50 @@ export default function AdminDashboard() {
         </Card>
       </motion.div>
 
-      {/* Recent Activity */}
+      {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Products */}
+        {/* Store Overview */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card glass className="p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Store Overview</h2>
+          <Card className="p-6 border-2 border-light-200">
+            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              📈 Store Overview
+            </h2>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-dark-800/50">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-primary-50 border-2 border-primary-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Package className="h-5 w-5 text-blue-400" />
-                  </div>
+                  <span className="text-2xl">📦</span>
                   <div>
-                    <p className="text-white font-medium">Active Products</p>
-                    <p className="text-dark-400 text-sm">Ready for sale</p>
+                    <p className="text-slate-800 font-semibold">Active Products</p>
+                    <p className="text-slate-500 text-sm">Ready for sale</p>
                   </div>
                 </div>
-                <span className="text-white font-bold text-lg">{stats.totalProducts}</span>
+                <span className="text-slate-800 font-bold text-xl">{stats.totalProducts}</span>
               </div>
               
-              <div className="flex items-center justify-between p-4 rounded-xl bg-dark-800/50">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-accent-50 border-2 border-accent-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <ShoppingCart className="h-5 w-5 text-green-400" />
-                  </div>
+                  <span className="text-2xl">🛒</span>
                   <div>
-                    <p className="text-white font-medium">Recent Orders</p>
-                    <p className="text-dark-400 text-sm">Last 7 days</p>
+                    <p className="text-slate-800 font-semibold">Recent Orders</p>
+                    <p className="text-slate-500 text-sm">Last 7 days</p>
                   </div>
                 </div>
-                <span className="text-white font-bold text-lg">{stats.recentOrders}</span>
+                <span className="text-slate-800 font-bold text-xl">{stats.recentOrders}</span>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-dark-800/50">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary-50 border-2 border-secondary-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-amber-400" />
-                  </div>
+                  <span className="text-2xl">💰</span>
                   <div>
-                    <p className="text-white font-medium">Total Revenue</p>
-                    <p className="text-dark-400 text-sm">All time</p>
+                    <p className="text-slate-800 font-semibold">Total Revenue</p>
+                    <p className="text-slate-500 text-sm">All time</p>
                   </div>
                 </div>
-                <span className="text-white font-bold text-lg">{formatPrice(stats.totalRevenue)}</span>
+                <span className="text-slate-800 font-bold text-xl">{formatPrice(stats.totalRevenue)}</span>
               </div>
             </div>
           </Card>
@@ -265,38 +269,40 @@ export default function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card glass className="p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Getting Started</h2>
+          <Card className="p-6 border-2 border-light-200">
+            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              🚀 Getting Started
+            </h2>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-dark-800/30">
-                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 text-sm font-medium">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-accent-50 border-2 border-accent-100">
+                <div className="w-8 h-8 rounded-full bg-accent-400 flex items-center justify-center text-white text-sm font-bold">
                   ✓
                 </div>
-                <span className="text-dark-300">Set up your store</span>
+                <span className="text-slate-600">Set up your store</span>
               </div>
               
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-dark-800/30">
-                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 text-sm font-medium">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-accent-50 border-2 border-accent-100">
+                <div className="w-8 h-8 rounded-full bg-accent-400 flex items-center justify-center text-white text-sm font-bold">
                   ✓
                 </div>
-                <span className="text-dark-300">Add categories</span>
+                <span className="text-slate-600">Add categories</span>
               </div>
               
               <Link href="/admin/products/new">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-dark-800/30 hover:bg-dark-800/50 transition-colors cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-primary-500/20 flex items-center justify-center text-primary-400 text-sm font-medium">
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-primary-50 border-2 border-primary-100 hover:bg-primary-100 transition-colors cursor-pointer group">
+                  <div className="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center text-white text-sm font-bold">
                     3
                   </div>
-                  <span className="text-dark-200">Add your first product</span>
-                  <ArrowUpRight className="h-4 w-4 text-dark-500 ml-auto" />
+                  <span className="text-slate-700 font-medium group-hover:text-primary-700">Add your first product</span>
+                  <ArrowUpRight className="h-4 w-4 text-slate-400 ml-auto group-hover:text-primary-500" />
                 </div>
               </Link>
               
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-dark-800/30">
-                <div className="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-dark-500 text-sm font-medium">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-light-50 border-2 border-light-200">
+                <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-slate-500 text-sm font-bold">
                   4
                 </div>
-                <span className="text-dark-400">Configure payment settings</span>
+                <span className="text-slate-400">Configure payment settings</span>
               </div>
             </div>
           </Card>

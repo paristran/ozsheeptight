@@ -12,11 +12,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          'flex h-11 w-full rounded-xl border border-dark-700/50',
-          'bg-dark-800/50 backdrop-blur-xl px-4 py-2 text-sm text-dark-100',
-          'placeholder:text-dark-500',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50',
-          'disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-12 w-full rounded-2xl border-2 border-light-300',
+          'bg-white px-4 py-3 text-base text-slate-700',
+          'placeholder:text-slate-400',
+          'focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400',
+          'disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-slate-50',
           'transition-all duration-200',
           className
         )}
@@ -39,11 +39,11 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         className={cn(
-          'flex min-h-[120px] w-full rounded-xl border border-dark-700/50',
-          'bg-dark-800/50 backdrop-blur-xl px-4 py-3 text-sm text-dark-100',
-          'placeholder:text-dark-500',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50',
-          'disabled:cursor-not-allowed disabled:opacity-50',
+          'flex min-h-[140px] w-full rounded-2xl border-2 border-light-300',
+          'bg-white px-4 py-3 text-base text-slate-700',
+          'placeholder:text-slate-400',
+          'focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400',
+          'disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-slate-50',
           'transition-all duration-200',
           'resize-none',
           className

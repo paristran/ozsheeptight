@@ -1,26 +1,32 @@
 import { cn } from '@/lib/utils'
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'secondary' | 'success' | 'warning' | 'destructive'
+  variant?: 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info' | 'purple' | 'pink'
 }
 
 export function Badge({ className, variant = 'default', ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
-        'transition-colors duration-200',
+        'inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium',
+        'transition-all duration-200',
         {
-          'bg-primary-500/20 text-primary-300 border border-primary-500/30':
+          'bg-primary-100 text-primary-700 border border-primary-200':
             variant === 'default',
-          'bg-dark-700/50 text-dark-200 border border-dark-600/50':
+          'bg-slate-100 text-slate-600 border border-slate-200':
             variant === 'secondary',
-          'bg-green-500/20 text-green-300 border border-green-500/30':
+          'bg-accent-100 text-accent-700 border border-accent-200':
             variant === 'success',
-          'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30':
+          'bg-secondary-100 text-secondary-700 border border-secondary-200':
             variant === 'warning',
-          'bg-red-500/20 text-red-300 border border-red-500/30':
+          'bg-coral-100 text-coral-700 border border-coral-200':
             variant === 'destructive',
+          'bg-sky-100 text-sky-700 border border-sky-200':
+            variant === 'info',
+          'bg-purple-100 text-purple-700 border border-purple-200':
+            variant === 'purple',
+          'bg-pink-100 text-pink-700 border border-pink-200':
+            variant === 'pink',
         },
         className
       )}

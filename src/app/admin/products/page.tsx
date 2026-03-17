@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -8,12 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, 
   Search, 
-  MoreHorizontal,
   Edit,
   Trash2,
   Eye,
   Package,
-  Filter
+  Filter,
+  X
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Product, Category } from '@/lib/types/database'
@@ -72,40 +71,42 @@ export default function AdminProductsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Products</h1>
-          <p className="text-dark-400 mt-1">
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
+            📦 Products
+          </h1>
+          <p className="text-slate-500 mt-1">
             {products.length} {products.length === 1 ? 'product' : 'products'} total
           </p>
         </div>
         <Link href="/admin/products/new">
           <Button>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 h-5 w-5" />
             Add Product
           </Button>
         </Link>
       </div>
 
       {/* Filters */}
-      <Card glass className="p-4">
+      <Card className="p-4 border-2 border-light-200">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-dark-500" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
 
           {/* Category Filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-dark-500" />
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="h-11 pl-10 pr-8 rounded-xl border border-dark-700/50 bg-dark-800/50 backdrop-blur-xl text-dark-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 appearance-none cursor-pointer min-w-[200px]"
+              className="h-12 pl-12 pr-10 rounded-2xl border-2 border-light-300 bg-white text-slate-700 text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 appearance-none cursor-pointer min-w-[200px]"
             >
               <option value="">All Categories</option>
               {categories.map(cat => (
@@ -117,19 +118,19 @@ export default function AdminProductsPage() {
       </Card>
 
       {/* Products Table */}
-      <Card glass className="overflow-hidden">
+      <Card className="overflow-hidden border-2 border-light-200">
         {loading ? (
           <div className="p-8 text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto" />
-            <p className="text-dark-400 mt-4">Loading products...</p>
+            <div className="spinner-fun mx-auto" />
+            <p className="text-slate-500 mt-4">Loading products...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-dark-800/50 flex items-center justify-center">
-              <Package className="h-8 w-8 text-dark-500" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-primary-100 to-purple-100 flex items-center justify-center">
+              <Package className="h-10 w-10 text-primary-400" />
             </div>
-            <h3 className="text-white text-lg font-semibold mb-2">No products found</h3>
-            <p className="text-dark-400 mb-6">
+            <h3 className="text-slate-800 text-lg font-semibold mb-2">No products found</h3>
+            <p className="text-slate-500 mb-6">
               {searchQuery || selectedCategory 
                 ? 'Try adjusting your filters'
                 : 'Get started by adding your first product'}
@@ -137,7 +138,7 @@ export default function AdminProductsPage() {
             {!searchQuery && !selectedCategory && (
               <Link href="/admin/products/new">
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="mr-2 h-5 w-5" />
                   Add Product
                 </Button>
               </Link>
@@ -147,13 +148,13 @@ export default function AdminProductsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-dark-700/30">
-                  <th className="text-left text-dark-400 text-sm font-medium px-6 py-4">Product</th>
-                  <th className="text-left text-dark-400 text-sm font-medium px-6 py-4">Category</th>
-                  <th className="text-left text-dark-400 text-sm font-medium px-6 py-4">Price</th>
-                  <th className="text-left text-dark-400 text-sm font-medium px-6 py-4">Stock</th>
-                  <th className="text-left text-dark-400 text-sm font-medium px-6 py-4">Status</th>
-                  <th className="text-right text-dark-400 text-sm font-medium px-6 py-4">Actions</th>
+                <tr className="border-b-2 border-light-200 bg-light-50">
+                  <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Product</th>
+                  <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Category</th>
+                  <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Price</th>
+                  <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Stock</th>
+                  <th className="text-left text-slate-500 text-sm font-semibold px-6 py-4">Status</th>
+                  <th className="text-right text-slate-500 text-sm font-semibold px-6 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -165,11 +166,11 @@ export default function AdminProductsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ delay: index * 0.02 }}
-                      className="border-b border-dark-700/20 hover:bg-dark-800/30 transition-colors"
+                      className="border-b border-light-200 hover:bg-light-50/50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-dark-800 shrink-0">
+                          <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-primary-50 to-purple-50 shrink-0 border-2 border-light-200">
                             {product.image_url ? (
                               <Image
                                 src={product.image_url}
@@ -179,65 +180,72 @@ export default function AdminProductsPage() {
                               />
                             ) : (
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-dark-600" />
+                                <span className="text-2xl">🐑</span>
                               </div>
                             )}
                           </div>
                           <div>
-                            <p className="text-white font-medium">{product.title}</p>
-                            <p className="text-dark-500 text-sm">{formatDate(product.created_at)}</p>
+                            <p className="text-slate-800 font-semibold">{product.title}</p>
+                            <p className="text-slate-400 text-sm">{formatDate(product.created_at)}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-dark-300 text-sm">
+                        <Badge variant="secondary">
                           {(product as any).category?.name || 'Uncategorized'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-white font-medium">{formatPrice(product.price)}</span>
+                          <span className="text-slate-800 font-semibold">{formatPrice(product.price)}</span>
                           {product.compare_at_price && (
-                            <span className="text-dark-500 line-through text-sm">
+                            <span className="text-slate-400 line-through text-sm">
                               {formatPrice(product.compare_at_price)}
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`text-sm ${product.stock_quantity > 10 ? 'text-green-400' : product.stock_quantity > 0 ? 'text-yellow-400' : 'text-red-400'}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
+                          product.stock_quantity > 10 
+                            ? 'bg-accent-50 text-accent-600 border border-accent-200' 
+                            : product.stock_quantity > 0 
+                              ? 'bg-secondary-50 text-secondary-600 border border-secondary-200'
+                              : 'bg-coral-50 text-coral-500 border border-coral-200'
+                        }`}>
+                          {product.stock_quantity > 10 ? '✓' : product.stock_quantity > 0 ? '⚠️' : '✗'}
                           {product.stock_quantity}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           {product.featured && (
-                            <Badge variant="default">Featured</Badge>
+                            <Badge variant="warning">⭐ Featured</Badge>
                           )}
                           <Badge variant={product.active ? 'success' : 'secondary'}>
-                            {product.active ? 'Active' : 'Draft'}
+                            {product.active ? '✓ Active' : 'Draft'}
                           </Badge>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <Link href={`/product/${product.id}`} target="_blank">
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Eye className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-primary-50 hover:text-primary-600">
+                              <Eye className="h-5 w-5" />
                             </Button>
                           </Link>
                           <Link href={`/admin/products/${product.id}/edit`}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Edit className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-purple-50 hover:text-purple-600">
+                              <Edit className="h-5 w-5" />
                             </Button>
                           </Link>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-400 hover:text-red-300"
+                            className="h-10 w-10 rounded-xl text-coral-500 hover:bg-coral-50 hover:text-coral-600"
                             onClick={() => setShowDeleteModal(product.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                           </Button>
                         </div>
                       </td>
@@ -257,18 +265,23 @@ export default function AdminProductsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-dark-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
             >
-              <Card glass className="p-6 max-w-md w-full">
-                <h3 className="text-xl font-semibold text-white mb-2">Delete Product</h3>
-                <p className="text-dark-400 mb-6">
-                  Are you sure you want to delete this product? This action cannot be undone.
-                </p>
+              <Card className="p-6 max-w-md w-full border-2 border-light-200">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-coral-100 flex items-center justify-center">
+                    <span className="text-3xl">⚠️</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Product</h3>
+                  <p className="text-slate-500">
+                    Are you sure you want to delete this product? This action cannot be undone.
+                  </p>
+                </div>
                 <div className="flex gap-3">
                   <Button
                     variant="secondary"

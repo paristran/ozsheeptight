@@ -5,20 +5,133 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222.2 47% 11%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 47% 11%;
   }
 
   * {
-    @apply border-dark-700/30;
+    @apply border-light-300;
   }
 
   body {
-    @apply bg-dark-950 text-dark-100 antialiased;
+    @apply bg-gradient-to-br from-light-50 via-blue-50/30 to-purple-50/30 text-slate-800 antialiased;
+    background-attachment: fixed;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Kid-friendly card component */
+  .card-kid {
+    @apply bg-white/90 backdrop-blur-sm rounded-3xl shadow-soft border border-white/50;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-kid:hover {
+    @apply shadow-soft-lg -translate-y-1;
+  }
+
+  /* Fun button styles */
+  .btn-fun {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-2xl font-semibold text-base;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:scale-105 active:scale-95;
+    @apply shadow-soft hover:shadow-soft-lg;
+  }
+
+  .btn-fun-blue {
+    @apply btn-fun bg-gradient-to-r from-primary-400 to-primary-500 text-white;
+    @apply hover:from-primary-500 hover:to-primary-600;
+    @apply hover:shadow-glow-blue;
+  }
+
+  .btn-fun-yellow {
+    @apply btn-fun bg-gradient-to-r from-secondary-300 to-secondary-400 text-slate-800;
+    @apply hover:from-secondary-400 hover:to-secondary-500;
+    @apply hover:shadow-glow-yellow;
+  }
+
+  .btn-fun-green {
+    @apply btn-fun bg-gradient-to-r from-accent-300 to-accent-400 text-white;
+    @apply hover:from-accent-400 hover:to-accent-500;
+    @apply hover:shadow-glow-green;
+  }
+
+  .btn-fun-purple {
+    @apply btn-fun bg-gradient-to-r from-purple-300 to-purple-400 text-white;
+    @apply hover:from-purple-400 hover:to-purple-500;
+    @apply hover:shadow-glow-purple;
+  }
+
+  .btn-fun-pink {
+    @apply btn-fun bg-gradient-to-r from-pink-300 to-pink-400 text-white;
+    @apply hover:from-pink-400 hover:to-pink-500;
+    @apply hover:shadow-glow-pink;
+  }
+
+  /* Badge styles */
+  .badge-fun {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  /* Input styles */
+  .input-fun {
+    @apply w-full h-12 px-4 rounded-2xl text-slate-700;
+    @apply bg-white border-2 border-light-300;
+    @apply placeholder:text-slate-400;
+    @apply focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-400;
+    @apply transition-all duration-200;
+  }
+
+  /* Fun gradient backgrounds */
+  .bg-fun-gradient-blue {
+    @apply bg-gradient-to-br from-primary-100 via-primary-50 to-white;
+  }
+
+  .bg-fun-gradient-yellow {
+    @apply bg-gradient-to-br from-secondary-100 via-secondary-50 to-white;
+  }
+
+  .bg-fun-gradient-green {
+    @apply bg-gradient-to-br from-accent-100 via-accent-50 to-white;
+  }
+
+  .bg-fun-gradient-purple {
+    @apply bg-gradient-to-br from-purple-100 via-purple-50 to-white;
+  }
+
+  .bg-fun-gradient-pink {
+    @apply bg-gradient-to-br from-pink-100 via-pink-50 to-white;
+  }
+
+  .bg-fun-rainbow {
+    background: linear-gradient(135deg, 
+      theme('colors.primary.100') 0%, 
+      theme('colors.secondary.100') 25%, 
+      theme('colors.accent.100') 50%, 
+      theme('colors.purple.100') 75%, 
+      theme('colors.pink.100') 100%
+    );
+  }
+
+  /* Playful pattern backgrounds */
+  .bg-fun-dots {
+    background-image: radial-gradient(circle, theme('colors.primary.200') 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .bg-fun-grid {
+    background-image: 
+      linear-gradient(to right, theme('colors.light.200') 1px, transparent 1px),
+      linear-gradient(to bottom, theme('colors.light.200') 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 }
 
@@ -41,33 +154,78 @@
     overflow: hidden;
   }
 
-  /* Scrollbar Styling */
+  /* Scrollbar Styling - Kid friendly */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-dark-900;
+    @apply bg-light-100 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-dark-700 rounded-full;
+    @apply bg-gradient-to-b from-primary-300 to-primary-400 rounded-full;
+    border: 2px solid transparent;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-dark-600;
+    @apply from-primary-400 to-primary-500;
   }
 
   /* Selection */
   ::selection {
-    @apply bg-primary-500/30 text-white;
+    @apply bg-primary-200 text-slate-900;
   }
-}
 
-/* Smooth scroll */
-html {
-  scroll-behavior: smooth;
+  /* Fun hover effects */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-2;
+  }
+
+  .hover-bounce {
+    @apply transition-all duration-300 hover:scale-105 active:scale-95;
+  }
+
+  .hover-glow-blue {
+    @apply transition-shadow duration-300 hover:shadow-glow-blue;
+  }
+
+  .hover-glow-yellow {
+    @apply transition-shadow duration-300 hover:shadow-glow-yellow;
+  }
+
+  .hover-glow-green {
+    @apply transition-shadow duration-300 hover:shadow-glow-green;
+  }
+
+  .hover-glow-purple {
+    @apply transition-shadow duration-300 hover:shadow-glow-purple;
+  }
+
+  .hover-glow-pink {
+    @apply transition-shadow duration-300 hover:shadow-glow-pink;
+  }
+
+  /* Animated underline */
+  .animated-underline {
+    position: relative;
+  }
+
+  .animated-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    @apply bg-gradient-to-r from-primary-400 to-purple-400 rounded-full;
+    transition: width 0.3s ease;
+  }
+
+  .animated-underline:hover::after {
+    width: 100%;
+  }
 }
 
 /* Custom animations */
@@ -85,8 +243,37 @@ html {
   background: linear-gradient(
     to right,
     transparent 0%,
-    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.5) 50%,
     transparent 100%
   );
   background-size: 1000px 100%;
+}
+
+/* Loading spinner */
+.spinner-fun {
+  @apply w-8 h-8 border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin;
+}
+
+/* Floating animation for decorative elements */
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Rainbow text */
+.text-rainbow {
+  background: linear-gradient(90deg, 
+    theme('colors.primary.500'), 
+    theme('colors.secondary.400'), 
+    theme('colors.accent.400'), 
+    theme('colors.purple.400'), 
+    theme('colors.pink.400')
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
