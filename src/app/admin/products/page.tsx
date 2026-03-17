@@ -59,8 +59,11 @@ export default function AdminProductsPage() {
   }
 
   async function deleteProduct(id: string) {
-    const supabase = createClient()
-    await supabase.from('products').delete().eq('id', id)
+    await fetch('/api/admin/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id }),
+    })
     setProducts(products.filter(p => p.id !== id))
     setShowDeleteModal(null)
     setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next })
@@ -85,8 +88,11 @@ export default function AdminProductsPage() {
 
   async function deleteSelected() {
     setBulkDeleting(true)
-    const supabase = createClient()
-    await supabase.from('products').delete().in('id', Array.from(selectedIds))
+    await fetch('/api/admin/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete-many', ids: Array.from(selectedIds) }),
+    })
     setProducts(products.filter(p => !selectedIds.has(p.id)))
     setSelectedIds(new Set())
     setBulkDeleting(false)
