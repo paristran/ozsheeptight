@@ -1,4 +1,3 @@
-title,description,price,compare_at_price,category,slug,image_url,images,stock_quantity,featured,active
-Premium Merino Wool Blanket,Luxuriously soft merino wool blanket,129.99,159.99,Blankets,premium-merino-wool-blanket,https://images.unsplash.com/photo-1586105251261-72a756497a11?w=800,,50,true,true
-Organic Cotton Baby Onesie Set,Set of 3 organic cotton onesies,49.99,,Clothing,organic-cotton-baby-onesie-set,https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800,,100,true,true
-Wooden Activity Cube,Interactive wooden activity cube,89.99,109.99,Toys,wooden-activity-cube,https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=800,,30,true,true
+title,description,price,compare_at_price,category,slug,image_url,images,stock_quantity,featured,active,variations
+Premium Merino Wool Blanket,Luxuriously soft merino wool blanket,129.99,159.99,Blankets,premium-merino-wool-blanket,https://images.unsplash.com/photo-1586105251261-72a756497a11?w=800,,50,true,true,
+Organic Cotton Baby Onesie,Soft organic cotton onesie,29.99,39.99,Clothing,organic-cotton-baby-onesie,https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800,,100,true,true,"[{""name"":""Color"",""values"":[""White"",""Pink"",""Blue"",""Yellow""]},{""name"":""Size"",""values"":[""0-3m"",""3-6m"",""6-12m"",""12-18m""]}]"

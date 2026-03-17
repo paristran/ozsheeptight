@@ -154,6 +154,63 @@ export default function BulkUploadPage() {
           failed++
           errors.push({ row: i + 1, title, error: result.error })
         } else {
+          // Save variations if present
+          const variationsRaw = get('variations')
+          if (variationsRaw) {
+            try {
+              const variations = JSON.parse(variationsRaw)
+              if (Array.isArray(variations) && variations.length > 0) {
+                // Get the product ID
+                const { data: newProduct } = await supabase
+                  .from('products')
+                  .select('id')
+                  .eq('title', title)
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .single() as any
+
+                if (newProduct) {
+                  // Generate all variant combinations
+                  const combos: { option: string; value: string }[][] = [[]]
+                  for (const opt of variations) {
+                    if (!opt.values?.length) continue
+                    const newCombos: { option: string; value: string }[][] = []
+                    for (const combo of combos) {
+                      for (const val of opt.values) {
+                        newCombos.push([...combo, { option: opt.name, value: val }])
+                      }
+                    }
+                    combos.length = 0
+                    combos.push(...newCombos)
+                  }
+
+                  // Save options and variants
+                  await fetch('/api/admin/variants', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      product_id: newProduct.id,
+                      options: variations.map((o: any, idx: number) => ({
+                        name: o.name,
+                        values: o.values,
+                        position: idx,
+                      })),
+                      variants: combos.map((combo, idx) => ({
+                        title: combo.map(c => c.value).join(' / '),
+                        price: getNum('price'), // default to base price
+                        stock_quantity: parseInt(get('stock_quantity')) || 0,
+                        position: idx,
+                        selectedValues: combo,
+                      })),
+                    }),
+                  })
+                }
+              }
+            } catch (e: any) {
+              // Variations parse error — product still saved, just log it
+              console.warn(`Row ${i + 1}: Failed to parse variations:`, e.message)
+            }
+          }
           success++
         }
       }
@@ -325,7 +382,14 @@ export default function BulkUploadPage() {
                   <li>• <code className="bg-light-100 px-1 rounded text-xs">category</code> — auto-creates if not found</li>
                   <li>• <code className="bg-light-100 px-1 rounded text-xs">featured/active</code> — true/false</li>
                   <li>• <code className="bg-light-100 px-1 rounded text-xs">price</code> — in AUD (no $ sign)</li>
+                  <li>• <code className="bg-light-100 px-1 rounded text-xs">variations</code> — JSON array (see below)</li>
                 </ul>
+              </div>
+              <div className="p-3 rounded-xl bg-purple-50 border border-purple-200">
+                <p className="text-xs font-mono text-purple-600 font-bold mb-1">🎨 Variations Format:</p>
+                <p className="text-xs text-slate-600 mb-1">JSON array in the <code className="bg-light-100 px-1 rounded text-xs">variations</code> column:</p>
+                <pre className="text-xs text-slate-700 bg-white p-2 rounded-lg mt-1 overflow-x-auto">[&#123;&quot;name&quot;:&quot;Color&quot;,&quot;values&quot;:[&quot;Red&quot;,&quot;Blue&quot;]&#125;]</pre>
+                <p className="text-xs text-slate-500 mt-1">Variants are auto-generated with base price/stock. Edit individually after upload.</p>
               </div>
             </div>
           </Card>
