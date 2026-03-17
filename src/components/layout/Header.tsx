@@ -2,15 +2,17 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ShoppingCart, Search, Menu, X, Sparkles } from 'lucide-react'
+import { ShoppingCart, Search, Menu, X, Sparkles, LogIn, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/lib/cart-context'
+import { useAuth } from '@/lib/auth-context'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const { itemCount } = useCart()
+  const { user, isAdmin, signOut } = useAuth()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -96,6 +98,30 @@ export function Header() {
                   </span>
                 </Button>
               </Link>
+
+              {/* Auth */}
+              {user || isAdmin ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={signOut}
+                  className="text-slate-500 hover:text-coral-500 hover:bg-coral-50 rounded-2xl"
+                  title="Sign out"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Link href="/login">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-2xl"
+                    title="Sign in"
+                  >
+                    <LogIn className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
 
               {/* Mobile Menu Toggle */}
               <Button
