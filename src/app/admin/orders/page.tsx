@@ -61,7 +61,7 @@ export default function AdminOrdersPage() {
     const supabase = createClient()
     await supabase
       .from('orders')
-      .update({ status })
+      .update({ status } as { status: string })
       .eq('id', orderId)
     
     setOrders(orders.map(o => 

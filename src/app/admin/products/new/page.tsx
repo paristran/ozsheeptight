@@ -88,7 +88,7 @@ export default function NewProductPage() {
 
     const { error } = await supabase
       .from('products')
-      .insert(productData)
+      .insert(productData as any)
 
     if (error) {
       alert('Error creating product: ' + error.message)

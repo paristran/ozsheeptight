@@ -33,10 +33,10 @@ export function Categories() {
     const { data } = await supabase
       .from('categories')
       .select('*, products(count)')
-      .order('name')
+      .order('name') as any
     
     if (data) {
-      const categoriesWithCount = data.map(cat => ({
+      const categoriesWithCount = data.map((cat: any) => ({
         ...cat,
         product_count: cat.products?.[0]?.count || 0,
       }))

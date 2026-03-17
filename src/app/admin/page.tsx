@@ -52,19 +52,19 @@ export default function AdminDashboard() {
     const [productsRes, categoriesRes, ordersRes] = await Promise.all([
       supabase.from('products').select('id', { count: 'exact' }),
       supabase.from('categories').select('id', { count: 'exact' }),
-      supabase.from('orders').select('total, created_at'),
+      supabase.from('orders').select('total, created_at') as any,
     ])
 
     const totalProducts = productsRes.count || 0
     const totalCategories = categoriesRes.count || 0
     const totalOrders = ordersRes.data?.length || 0
-    const totalRevenue = ordersRes.data?.reduce((sum, o) => sum + o.total, 0) || 0
+    const totalRevenue = ordersRes.data?.reduce((sum: number, o: any) => sum + (o.total || 0), 0) || 0
     
     // Calculate recent orders (last 7 days)
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     const recentOrders = ordersRes.data?.filter(
-      o => new Date(o.created_at) > sevenDaysAgo
+      (o: any) => new Date(o.created_at) > sevenDaysAgo
     ).length || 0
 
     setStats({

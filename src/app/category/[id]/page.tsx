@@ -30,13 +30,13 @@ export default function CategoryPage({ params }: { params: Promise<{ id: string 
         .from('categories')
         .select('*')
         .eq('id', resolvedParams.id)
-        .single(),
+        .single() as any,
       supabase
         .from('products')
         .select('*')
         .eq('category_id', resolvedParams.id)
         .eq('active', true)
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false }) as any,
     ])
 
     if (categoryRes.data) setCategory(categoryRes.data)

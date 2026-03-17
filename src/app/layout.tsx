@@ -1,26 +1,7 @@
 import type { Metadata } from 'next'
-import { Poppins, Nunito, Comic_Neue } from 'next/font/google'
 import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-
-const poppins = Poppins({ 
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-poppins',
-})
-
-const nunito = Nunito({ 
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-nunito',
-})
-
-const comicNeue = Comic_Neue({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-comic',
-})
 
 export const metadata: Metadata = {
   title: 'OzSheepTight - Premium Baby Products',
@@ -35,7 +16,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${poppins.variable} ${nunito.variable} ${comicNeue.variable} font-sans antialiased min-h-screen flex flex-col`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet" />
+      </head>
+      <body className="font-sans antialiased min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 pt-20">
           {children}

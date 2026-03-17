@@ -48,7 +48,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       .from('products')
       .select('*')
       .eq('id', resolvedParams.id)
-      .single()
+      .single() as any
 
     if (productData) {
       setProduct(productData)
@@ -59,7 +59,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           .from('categories')
           .select('*')
           .eq('id', productData.category_id)
-          .single()
+          .single() as any
         setCategory(categoryData)
         
         // Fetch related products
@@ -69,7 +69,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           .eq('category_id', productData.category_id)
           .neq('id', productData.id)
           .eq('active', true)
-          .limit(4)
+          .limit(4) as any
         setRelatedProducts(relatedData || [])
       }
     }
