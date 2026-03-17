@@ -58,11 +58,11 @@ export default function AdminOrdersPage() {
   }
 
   async function updateOrderStatus(orderId: string, status: string) {
-    const supabase = createClient()
-    await supabase
-      .from('orders')
-      .update({ status } as { status: string })
-      .eq('id', orderId)
+    await fetch('/api/admin/crud', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'orders', action: 'update', id: orderId, data: { status } }),
+    })
     
     setOrders(orders.map(o => 
       o.id === orderId ? { ...o, status } : o

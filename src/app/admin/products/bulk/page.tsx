@@ -106,14 +106,24 @@ export default function BulkUploadPage() {
         const categoryId = categoryName ? categoryMap.get(categoryName.toLowerCase()) || null : null
 
         if (categoryName && !categoryId) {
-          // Try to create category
-          const { data: newCat } = await supabase.from('categories').insert({
-            name: categoryName,
-            slug: categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            description: `${categoryName} products`,
-          }).select('id').single() as any
-          if (newCat) {
-            categoryMap.set(categoryName.toLowerCase(), newCat.id)
+          // Try to create category via admin API
+          const catRes = await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              table: 'categories',
+              action: 'insert',
+              data: {
+                name: categoryName,
+                slug: categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                description: `${categoryName} products`,
+              },
+            }),
+          })
+          const catResult = await catRes.json()
+          if (!catResult.error) {
+            const { data: newCat } = await supabase.from('categories').select('id').eq('name', categoryName).single() as any
+            if (newCat) categoryMap.set(categoryName.toLowerCase(), newCat.id)
           }
         }
 
@@ -133,11 +143,16 @@ export default function BulkUploadPage() {
           active: getBool('active'),
         }
 
-        const { error } = await supabase.from('products').insert(productData as any)
+        const res = await fetch('/api/admin/crud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: 'products', action: 'insert', data: productData }),
+        })
+        const result = await res.json()
 
-        if (error) {
+        if (result.error) {
           failed++
-          errors.push({ row: i + 1, title, error: error.message })
+          errors.push({ row: i + 1, title, error: result.error })
         } else {
           success++
         }

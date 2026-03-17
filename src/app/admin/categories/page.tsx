@@ -91,39 +91,36 @@ export default function AdminCategoriesPage() {
   const handleSave = async () => {
     if (!formData.name) return
     setSaving(true)
-    const supabase = createClient() as any
+
+    const endpoint = '/api/admin/crud'
+    const payload: any = {
+      table: 'categories',
+      data: {
+        name: formData.name,
+        slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        description: formData.description || null,
+        image_url: formData.image_url || null,
+      },
+    }
 
     if (showModal === 'add') {
-      const { error } = await supabase
-        .from('categories')
-        .insert({
-          name: formData.name,
-          slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-          description: formData.description || null,
-          image_url: formData.image_url || null,
-        })
-      
-      if (error) {
-        alert('Error creating category: ' + error.message)
-        setSaving(false)
-        return
-      }
+      payload['action'] = 'insert'
     } else if (showModal === 'edit' && editCategory) {
-      const { error } = await supabase
-        .from('categories')
-        .update({
-          name: formData.name,
-          slug: formData.slug,
-          description: formData.description || null,
-          image_url: formData.image_url || null,
-        })
-        .eq('id', editCategory.id)
-      
-      if (error) {
-        alert('Error updating category: ' + error.message)
-        setSaving(false)
-        return
-      }
+      payload['action'] = 'update'
+      payload['id'] = editCategory.id
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const result = await res.json()
+
+    if (result.error) {
+      alert('Error: ' + result.error)
+      setSaving(false)
+      return
     }
 
     setShowModal(null)
@@ -132,17 +129,18 @@ export default function AdminCategoriesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id)
-    
-    if (error) {
-      alert('Error deleting category: ' + error.message)
+    const res = await fetch('/api/admin/crud', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'categories', action: 'delete', id }),
+    })
+    const result = await res.json()
+
+    if (result.error) {
+      alert('Error deleting category: ' + result.error)
       return
     }
-    
+
     setCategories(categories.filter(c => c.id !== id))
     setShowDeleteModal(null)
   }

@@ -59,10 +59,10 @@ export default function AdminProductsPage() {
   }
 
   async function deleteProduct(id: string) {
-    await fetch('/api/admin/products', {
+    await fetch('/api/admin/crud', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', id }),
+      body: JSON.stringify({ table: 'products', action: 'delete', id }),
     })
     setProducts(products.filter(p => p.id !== id))
     setShowDeleteModal(null)
@@ -88,10 +88,10 @@ export default function AdminProductsPage() {
 
   async function deleteSelected() {
     setBulkDeleting(true)
-    await fetch('/api/admin/products', {
+    await fetch('/api/admin/crud', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete-many', ids: Array.from(selectedIds) }),
+      body: JSON.stringify({ table: 'products', action: 'delete-many', ids: Array.from(selectedIds) }),
     })
     setProducts(products.filter(p => !selectedIds.has(p.id)))
     setSelectedIds(new Set())

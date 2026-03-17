@@ -86,9 +86,11 @@ export default function NewProductPage() {
       active: formData.active,
     }
 
-    const { error } = await supabase
-      .from('products')
-      .insert(productData as any)
+    const { error } = await fetch('/api/admin/crud', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'products', action: 'insert', data: productData }),
+    }).then(r => r.json())
 
     if (error) {
       alert('Error creating product: ' + error.message)
