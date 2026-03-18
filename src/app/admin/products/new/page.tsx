@@ -39,7 +39,16 @@ interface VariantForm {
   selectedValues: { option: string; value: string }[]
 }
 
-// Generate all combinations of option values
+// Helper: upload a single file to Supabase Storage
+async function uploadFile(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('files', file)
+  const res = await fetch('/api/upload', { method: 'POST', body: form })
+  const { urls, error } = await res.json()
+  if (error) throw new Error(error)
+  return urls[0]
+}
+
 function generateCombinations(options: VariantOptionForm[]): { option: string; value: string }[][] {
   if (options.length === 0) return []
   let result: { option: string; value: string }[][] = [[]]
@@ -62,7 +71,7 @@ export default function NewProductPage() {
   const galleryRef = useRef<HTMLInputElement>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -75,11 +84,16 @@ export default function NewProductPage() {
     featured: false,
     active: true,
   })
-  const [galleryImages, setGalleryImages] = useState<string[]>([])
+  // Preview URLs (local blob or existing URL)
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null)
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null)
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([])
+  // Existing gallery URLs (pasted, not from file upload)
+  const [galleryUrlInputs, setGalleryUrlInputs] = useState<string[]>([])
+
   const [variantOptions, setVariantOptions] = useState<VariantOptionForm[]>([])
   const [variantRows, setVariantRows] = useState<VariantForm[]>([])
-  const [showVariations, setShowVariations] = useState(false)
-  const [newValueInput, setNewValueInput] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchCategories()
@@ -94,51 +108,69 @@ export default function NewProductPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
-
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     if (name === 'title' && !formData.slug) {
-      setFormData(prev => ({
-        ...prev,
-        slug: slugify(value),
-      }))
+      setFormData(prev => ({ ...prev, slug: slugify(value) }))
     }
   }
 
-  const uploadImages = async (files: FileList, isMain: boolean) => {
-    setUploading(true)
-    const form = new FormData()
-    Array.from(files).forEach(f => form.append('files', f))
+  // Main image: preview locally, store file for later upload
+  const handleMainImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setMainImageFile(file)
+    setMainImagePreview(URL.createObjectURL(file))
+    setFormData(prev => ({ ...prev, image_url: '' })) // clear any pasted URL
+    e.target.value = '' // reset so same file can be re-selected
+  }
 
-    const res = await fetch('/api/upload', { method: 'POST', body: form })
-    const { urls, error } = await res.json()
+  const removeMainImage = () => {
+    setMainImageFile(null)
+    setMainImagePreview(null)
+    setFormData(prev => ({ ...prev, image_url: '' }))
+  }
 
-    if (error) {
-      alert('Upload failed: ' + error)
-      setUploading(false)
-      return
-    }
-
-    if (isMain && urls[0]) {
-      setFormData(prev => ({ ...prev, image_url: urls[0] }))
-    } else {
-      setGalleryImages(prev => [...prev, ...urls])
-    }
-    setUploading(false)
+  // Gallery: preview locally, store files for later upload
+  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files?.length) return
+    const newFiles = Array.from(files)
+    setGalleryFiles(prev => [...prev, ...newFiles])
+    setGalleryPreviews(prev => [...prev, ...newFiles.map(f => URL.createObjectURL(f))])
+    e.target.value = ''
   }
 
   const removeGalleryImage = (index: number) => {
-    setGalleryImages(prev => prev.filter((_, i) => i !== index))
+    // Check if it's a URL-based image or file-based
+    if (index < galleryUrlInputs.length) {
+      // It's a URL image
+      const urlIndex = index
+      setGalleryUrlInputs(prev => prev.filter((_, i) => i !== urlIndex))
+    } else {
+      // It's a file-based image
+      const fileIndex = index - galleryUrlInputs.length
+      setGalleryFiles(prev => prev.filter((_, i) => i !== fileIndex))
+    }
+    setGalleryPreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addGalleryUrl = () => {
+    setGalleryUrlInputs(prev => [...prev, ''])
+    setGalleryPreviews(prev => [...prev, ''])
+  }
+
+  const updateGalleryUrl = (index: number, value: string) => {
+    const updated = [...galleryUrlInputs]
+    updated[index] = value
+    setGalleryUrlInputs(updated)
+    const previews = [...galleryPreviews]
+    previews[index] = value
+    setGalleryPreviews(previews)
   }
 
   // --- Variation handlers ---
   const addOption = () => {
-    const id = `opt_${Date.now()}`
-    setVariantOptions(prev => [...prev, { id, name: '', values: [] }])
-    setShowVariations(true)
+    setVariantOptions(prev => [...prev, { id: `opt_${Date.now()}`, name: '', values: [] }])
   }
 
   const removeOption = (optId: string) => {
@@ -150,19 +182,17 @@ export default function NewProductPage() {
     setVariantOptions(prev => prev.map(o => o.id === optId ? { ...o, name } : o))
   }
 
+  const [newValueInput, setNewValueInput] = useState<Record<string, string>>({})
+
   const addValue = (optId: string) => {
     const val = (newValueInput[optId] || '').trim()
     if (!val) return
-    setVariantOptions(prev => prev.map(o =>
-      o.id === optId ? { ...o, values: [...o.values, val] } : o
-    ))
+    setVariantOptions(prev => prev.map(o => o.id === optId ? { ...o, values: [...o.values, val] } : o))
     setNewValueInput(prev => ({ ...prev, [optId]: '' }))
   }
 
   const removeValue = (optId: string, value: string) => {
-    setVariantOptions(prev => prev.map(o =>
-      o.id === optId ? { ...o, values: o.values.filter(v => v !== value) } : o
-    ))
+    setVariantOptions(prev => prev.map(o => o.id === optId ? { ...o, values: o.values.filter(v => v !== value) } : o))
   }
 
   const regenerateVariants = useCallback(() => {
@@ -188,72 +218,103 @@ export default function NewProductPage() {
     setVariantRows(prev => prev.filter(v => v.id !== varId))
   }
 
+  // --- Submit: upload images then create product ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const productData = {
-      title: formData.title,
-      slug: formData.slug || slugify(formData.title),
-      description: formData.description || null,
-      price: parseFloat(formData.price) || 0,
-      compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
-      category_id: formData.category_id || null,
-      image_url: formData.image_url || null,
-      images: galleryImages.length > 0 ? galleryImages : null,
-      stock_quantity: parseInt(formData.stock_quantity) || 0,
-      featured: formData.featured,
-      active: formData.active,
-    }
-
-    const productRes = await fetch('/api/admin/crud', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table: 'products', action: 'insert', data: productData }),
-    }).then(r => r.json())
-
-    if (productRes.error) {
-      alert('Error creating product: ' + productRes.error)
-      setLoading(false)
-      return
-    }
-
-    // Save variants if any
-    const validOptions = variantOptions.filter(o => o.name && o.values.length > 0)
-    if (validOptions.length > 0 && variantRows.length > 0) {
-      const supabase = createClient()
-      const { data: product } = await supabase
-        .from('products')
-        .select('id')
-        .eq('title', formData.title)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single() as any
-
-      if (product) {
-        await fetch('/api/admin/variants', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_id: product.id,
-            options: validOptions.map((o, i) => ({ name: o.name, values: o.values, position: i })),
-            variants: variantRows.map((v, i) => ({
-              title: v.title,
-              sku: v.sku || null,
-              price: parseFloat(v.price) || 0,
-              compare_at_price: v.compare_at_price ? parseFloat(v.compare_at_price) : null,
-              image_url: v.image_url || null,
-              stock_quantity: parseInt(v.stock_quantity) || 0,
-              position: i,
-              selectedValues: v.selectedValues,
-            })),
-          }),
-        })
+    try {
+      // 1. Upload main image
+      let mainImageUrl = formData.image_url // could be pasted URL
+      if (mainImageFile) {
+        setUploadProgress('Uploading main image...')
+        mainImageUrl = await uploadFile(mainImageFile)
       }
-    }
 
-    router.push('/admin/products')
+      // 2. Upload gallery images
+      let galleryUrls: string[] = []
+      for (let i = 0; i < galleryFiles.length; i++) {
+        setUploadProgress(`Uploading gallery image ${i + 1}/${galleryFiles.length}...`)
+        const url = await uploadFile(galleryFiles[i])
+        galleryUrls.push(url)
+      }
+      // Add pasted URLs
+      galleryUrls = [...galleryUrls, ...galleryUrlInputs.filter(u => u.trim())]
+      if (galleryUrls.length === 0) galleryUrls = [] as any // keep empty
+
+      // 3. Create product
+      setUploadProgress('Creating product...')
+      const productData = {
+        title: formData.title,
+        slug: formData.slug || slugify(formData.title),
+        description: formData.description || null,
+        price: parseFloat(formData.price) || 0,
+        compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
+        category_id: formData.category_id || null,
+        image_url: mainImageUrl || null,
+        images: galleryUrls.length > 0 ? galleryUrls : null,
+        stock_quantity: parseInt(formData.stock_quantity) || 0,
+        featured: formData.featured,
+        active: formData.active,
+      }
+
+      const productRes = await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'products', action: 'insert', data: productData }),
+      }).then(r => r.json())
+
+      if (productRes.error) {
+        alert('Error creating product: ' + productRes.error)
+        setLoading(false)
+        setUploadProgress('')
+        return
+      }
+
+      // 4. Save variants
+      const validOptions = variantOptions.filter(o => o.name && o.values.length > 0)
+      if (validOptions.length > 0 && variantRows.length > 0) {
+        setUploadProgress('Saving variants...')
+        const supabase = createClient()
+        const { data: product } = await supabase
+          .from('products')
+          .select('id')
+          .eq('title', formData.title)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single() as any
+
+        if (product) {
+          await fetch('/api/admin/variants', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              product_id: product.id,
+              options: validOptions.map((o, i) => ({ name: o.name, values: o.values, position: i })),
+              variants: variantRows.map((v, i) => ({
+                title: v.title,
+                sku: v.sku || null,
+                price: parseFloat(v.price) || 0,
+                compare_at_price: v.compare_at_price ? parseFloat(v.compare_at_price) : null,
+                image_url: v.image_url || null,
+                stock_quantity: parseInt(v.stock_quantity) || 0,
+                position: i,
+                selectedValues: v.selectedValues,
+              })),
+            }),
+          })
+        }
+      }
+
+      router.push('/admin/products')
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+      setLoading(false)
+      setUploadProgress('')
+    }
   }
+
+  const displayMainPreview = mainImagePreview || (formData.image_url || null)
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -274,7 +335,6 @@ export default function NewProductPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
             <Card className="p-6 border-2 border-light-200">
@@ -285,32 +345,15 @@ export default function NewProductPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Product Title *</label>
-                  <Input
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    placeholder="e.g., Premium Wool Blanket"
-                    required
-                  />
+                  <Input name="title" value={formData.title} onChange={handleChange} placeholder="e.g., Premium Wool Blanket" required />
                 </div>
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Slug</label>
-                  <Input
-                    name="slug"
-                    value={formData.slug}
-                    onChange={handleChange}
-                    placeholder="auto-generated from title"
-                  />
+                  <Input name="slug" value={formData.slug} onChange={handleChange} placeholder="auto-generated from title" />
                 </div>
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Description</label>
-                  <Textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Describe your product..."
-                    rows={4}
-                  />
+                  <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Describe your product..." rows={4} />
                 </div>
               </div>
             </Card>
@@ -324,121 +367,111 @@ export default function NewProductPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Price (AUD) *</label>
-                  <Input
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    required
-                  />
+                  <Input name="price" type="number" step="0.01" value={formData.price} onChange={handleChange} placeholder="0.00" required />
                 </div>
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Compare at Price</label>
-                  <Input
-                    name="compare_at_price"
-                    type="number"
-                    step="0.01"
-                    value={formData.compare_at_price}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                  />
+                  <Input name="compare_at_price" type="number" step="0.01" value={formData.compare_at_price} onChange={handleChange} placeholder="0.00" />
                   <p className="text-slate-400 text-xs mt-1">Original price for showing discount</p>
                 </div>
               </div>
             </Card>
 
-            {/* Images */}
+            {/* Images — local preview only */}
             <Card className="p-6 border-2 border-light-200">
               <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                 <span className="text-xl">🖼️</span>
                 Images
               </h2>
-              <div className="space-y-6">
-                {/* Main Image Upload */}
-                <div>
-                  <label className="text-slate-600 text-sm font-medium mb-2 block">Main Image *</label>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadImages(e.target.files, true)} />
-                  
-                  {formData.image_url ? (
-                    <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-light-200 group">
-                      <Image src={formData.image_url} alt="Main" fill className="object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
-                          Replace
-                        </Button>
-                        <Button type="button" variant="destructive" size="sm" onClick={() => setFormData(p => ({ ...p, image_url: '' }))}>
-                          Remove
-                        </Button>
-                      </div>
-                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-primary-500 text-white text-xs font-bold">
-                        Main
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => fileRef.current?.click()}
-                      className="w-full h-48 rounded-2xl border-2 border-dashed border-light-300 hover:border-primary-400 hover:bg-primary-50/50 transition-all flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-primary-500"
-                    >
-                      {uploading ? (
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                      ) : (
-                        <>
-                          <Upload className="h-8 w-8" />
-                          <span className="font-medium">Click to upload main image</span>
-                          <span className="text-xs">JPG, PNG, WebP — max 5MB</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+              <p className="text-slate-400 text-xs mb-4">Images are previewed locally and uploaded only when you click &quot;Create Product&quot;.</p>
 
-                {/* Or paste URL */}
-                <div>
-                  <label className="text-slate-600 text-xs font-medium mb-1 block">Or paste image URL:</label>
+              {/* Main Image */}
+              <div className="mb-6">
+                <label className="text-slate-600 text-sm font-medium mb-2 block">Main Image *</label>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleMainImageSelect} />
+
+                {displayMainPreview ? (
+                  <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-light-200 group">
+                    <Image src={displayMainPreview} alt="Main preview" fill className="object-cover" unoptimized />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>Replace</Button>
+                      <Button type="button" variant="destructive" size="sm" onClick={removeMainImage}>Remove</Button>
+                    </div>
+                    <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-primary-500 text-white text-xs font-bold">Main</div>
+                    {mainImageFile && (
+                      <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-accent-500 text-white text-xs font-bold">Local</div>
+                    )}
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => fileRef.current?.click()} className="w-full h-48 rounded-2xl border-2 border-dashed border-light-300 hover:border-primary-400 hover:bg-primary-50/50 transition-all flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-primary-500">
+                    <Upload className="h-8 w-8" />
+                    <span className="font-medium">Click to upload main image</span>
+                    <span className="text-xs">JPG, PNG, WebP — max 5MB</span>
+                  </button>
+                )}
+
+                <div className="mt-2">
+                  <label className="text-slate-500 text-xs">Or paste image URL:</label>
+                  <Input
+                    value={formData.image_url}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, image_url: e.target.value }))
+                      if (e.target.value) { setMainImageFile(null); setMainImagePreview(null) }
+                    }}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              </div>
+
+              {/* Gallery Images */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-slate-600 text-sm font-medium">Additional Images</label>
                   <div className="flex gap-2">
-                    <Input
-                      name="image_url"
-                      value={formData.image_url}
-                      onChange={handleChange}
-                      placeholder="https://example.com/image.jpg"
-                    />
+                    <Button type="button" variant="ghost" size="sm" onClick={addGalleryUrl}>
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Add URL
+                    </Button>
+                    <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGallerySelect} />
+                    <Button type="button" variant="ghost" size="sm" onClick={() => galleryRef.current?.click()}>
+                      <Upload className="mr-1 h-3.5 w-3.5" /> Upload Files
+                    </Button>
                   </div>
                 </div>
 
-                {/* Gallery Images */}
-                <div>
-                  <label className="text-slate-600 text-sm font-medium mb-2 block">Additional Images</label>
-                  <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && uploadImages(e.target.files, false)} />
-
-                  {galleryImages.length > 0 && (
-                    <div className="flex flex-wrap gap-3 mb-3">
-                      {galleryImages.map((url, i) => (
-                        <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-light-200 group">
-                          <Image src={url} alt={`Gallery ${i + 1}`} fill className="object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryImage(i)}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-coral-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
+                {/* All gallery previews */}
+                {galleryPreviews.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {galleryPreviews.map((preview, i) => (
+                      <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-light-200 group">
+                        {preview ? (
+                          <Image src={preview} alt={`Gallery ${i + 1}`} fill className="object-cover" unoptimized />
+                        ) : (
+                          <div className="w-full h-full bg-light-100" />
+                        )}
+                        <button type="button" onClick={() => removeGalleryImage(i)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-coral-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X className="h-3 w-3" />
+                        </button>
+                        <div className="absolute bottom-0 left-0 right-0 text-center text-white text-xs font-bold px-1 py-0.5 bg-black/50 rounded-b-lg">
+                          #{i + 1}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                  <button
-                    type="button"
-                    onClick={() => galleryRef.current?.click()}
-                    className="w-24 h-24 rounded-xl border-2 border-dashed border-light-300 hover:border-primary-400 hover:bg-primary-50/50 transition-all flex flex-col items-center justify-center text-slate-400 hover:text-primary-500"
-                  >
-                    {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
-                    <span className="text-xs mt-1">Add</span>
-                  </button>
-                </div>
+                {/* URL input fields */}
+                {galleryUrlInputs.map((url, i) => (
+                  <div key={i} className="mt-2 flex gap-2">
+                    <Input value={url} onChange={e => updateGalleryUrl(i, e.target.value)} placeholder="https://example.com/image.jpg" className="text-sm" />
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 text-coral-500" onClick={() => removeGalleryImage(i)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {galleryPreviews.length === 0 && galleryUrlInputs.length === 0 && (
+                  <p className="text-slate-400 text-xs text-center py-4">No additional images yet</p>
+                )}
               </div>
             </Card>
 
@@ -467,9 +500,7 @@ export default function NewProductPage() {
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-sm font-bold text-slate-500">Option {optIdx + 1}</span>
                         <Input value={opt.name} onChange={e => updateOptionName(opt.id, e.target.value)} placeholder="e.g., Color, Size" className="flex-1 h-9 text-sm" />
-                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-coral-500" onClick={() => removeOption(opt.id)}>
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-coral-500" onClick={() => removeOption(opt.id)}><X className="h-4 w-4" /></Button>
                       </div>
                       <div className="flex flex-wrap gap-2 mb-2">
                         {opt.values.map(val => (
@@ -540,34 +571,14 @@ export default function NewProductPage() {
               <div className="space-y-4">
                 <label className="flex items-center justify-between cursor-pointer p-3 rounded-2xl hover:bg-light-50 transition-colors">
                   <span className="text-slate-600 font-medium">Active</span>
-                  <div
-                    className={`w-14 h-7 rounded-full transition-colors ${
-                      formData.active ? 'bg-primary-400' : 'bg-light-300'
-                    }`}
-                    onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
-                        formData.active ? 'translate-x-8' : 'translate-x-1'
-                      } mt-1`}
-                    />
+                  <div className={`w-14 h-7 rounded-full transition-colors ${formData.active ? 'bg-primary-400' : 'bg-light-300'}`} onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}>
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${formData.active ? 'translate-x-8' : 'translate-x-1'} mt-1`} />
                   </div>
                 </label>
                 <label className="flex items-center justify-between cursor-pointer p-3 rounded-2xl hover:bg-secondary-50 transition-colors">
-                  <span className="text-slate-600 font-medium flex items-center gap-2">
-                    ⭐ Featured
-                  </span>
-                  <div
-                    className={`w-14 h-7 rounded-full transition-colors ${
-                      formData.featured ? 'bg-secondary-400' : 'bg-light-300'
-                    }`}
-                    onClick={() => setFormData(prev => ({ ...prev, featured: !prev.featured }))}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
-                        formData.featured ? 'translate-x-8' : 'translate-x-1'
-                      } mt-1`}
-                    />
+                  <span className="text-slate-600 font-medium flex items-center gap-2">⭐ Featured</span>
+                  <div className={`w-14 h-7 rounded-full transition-colors ${formData.featured ? 'bg-secondary-400' : 'bg-light-300'}`} onClick={() => setFormData(prev => ({ ...prev, featured: !prev.featured }))}>
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${formData.featured ? 'translate-x-8' : 'translate-x-1'} mt-1`} />
                   </div>
                 </label>
               </div>
@@ -582,37 +593,37 @@ export default function NewProductPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Category</label>
-                  <select
-                    name="category_id"
-                    value={formData.category_id}
-                    onChange={handleChange}
-                    className="w-full h-12 px-4 rounded-2xl border-2 border-light-300 bg-white text-slate-700 text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 appearance-none cursor-pointer"
-                  >
+                  <select name="category_id" value={formData.category_id} onChange={handleChange} className="w-full h-12 px-4 rounded-2xl border-2 border-light-300 bg-white text-slate-700 text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 appearance-none cursor-pointer">
                     <option value="">Select category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
+                    {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
                   </select>
                 </div>
                 <div>
                   <label className="text-slate-600 text-sm font-medium mb-2 block">Stock Quantity</label>
-                  <Input
-                    name="stock_quantity"
-                    type="number"
-                    value={formData.stock_quantity}
-                    onChange={handleChange}
-                    placeholder="0"
-                  />
+                  <Input name="stock_quantity" type="number" value={formData.stock_quantity} onChange={handleChange} placeholder="0" />
                 </div>
               </div>
             </Card>
 
+            {/* Upload Progress */}
+            {uploadProgress && (
+              <Card className="p-4 border-2 border-primary-200 bg-primary-50">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
+                  <span className="text-primary-700 text-sm font-medium">{uploadProgress}</span>
+                </div>
+              </Card>
+            )}
+
             {/* Actions */}
             <Card className="p-6 border-2 border-light-200 bg-gradient-to-br from-primary-50 to-white">
-              <Button type="submit" className="w-full" disabled={loading || uploading}>
+              <Button type="submit" className="w-full" disabled={loading}>
                 <Save className="mr-2 h-5 w-5" />
-                {loading ? 'Creating...' : 'Create Product'}
+                {loading ? uploadProgress || 'Creating...' : 'Create Product'}
               </Button>
+              {loading && (
+                <p className="text-slate-400 text-xs text-center mt-2">Uploading images & creating product...</p>
+              )}
             </Card>
           </div>
         </div>
